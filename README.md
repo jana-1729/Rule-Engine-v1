@@ -234,14 +234,12 @@ npm run worker:dev   # Terminal 2
 
 | Document | Purpose |
 |----------|---------|
-| **[QUICK_START_UI.md](./QUICK_START_UI.md)** | ⭐ Dashboard walkthrough (NEW!) |
-| **[DASHBOARD_SETUP.md](./DASHBOARD_SETUP.md)** | 🎨 Complete UI guide (NEW!) |
-| **[UI_COMPONENTS_SUMMARY.md](./UI_COMPONENTS_SUMMARY.md)** | 🖼️ All UI features (NEW!) |
-| **[START_HERE.md](./START_HERE.md)** | Best place to start (API) |
-| **[docs/API_REFERENCE.md](./docs/API_REFERENCE.md)** | Complete API documentation |
-| **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** | Production deployment |
-| **[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)** | Code organization |
-| **[TRANSFORMATION_SUMMARY.md](./TRANSFORMATION_SUMMARY.md)** | What changed & why |
+| **[GETTING_STARTED.md](./GETTING_STARTED.md)** | ⭐ Start here - Complete setup guide |
+| **[ENV_SETUP_GUIDE.md](./ENV_SETUP_GUIDE.md)** | 🔧 Environment variables guide |
+| **[docs/API_REFERENCE.md](./docs/API_REFERENCE.md)** | 📚 Complete API documentation |
+| **[ADDING_INTEGRATIONS.md](./ADDING_INTEGRATIONS.md)** | 🔌 How to add new integrations |
+| **[docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)** | 🚀 Production deployment guide |
+| **.cursorrules** | 💻 Development standards |
 
 ---
 
@@ -303,19 +301,16 @@ See `docs/API_REFERENCE.md` for complete API docs.
 
 ## 🔌 Available Integrations
 
-### Communication
-Slack, Microsoft Teams, Discord
+### Currently Available
+- **Slack** - Team communication and notifications
 
-### Productivity
-Notion, Google Workspace, Airtable
+### Coming Soon
+- Notion, Google Sheets, HubSpot, Salesforce
+- Microsoft Teams, Discord, Zoom
+- GitHub, Jira, Linear
+- And 100+ more...
 
-### CRM
-HubSpot, Salesforce, Pipedrive
-
-### Development
-GitHub, GitLab, Jira
-
-_100+ more integrations (add easily with plugin system)_
+**Easy to Add**: Use the plugin system to add new integrations in minutes
 
 ---
 
