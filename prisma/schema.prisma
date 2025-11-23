@@ -1,5 +1,5 @@
-// Prisma Schema for Integration Platform
-// Optimized for multi-tenancy, scalability, and millions of workflow executions
+// Prisma Schema v2 - B2B2C Embedded Integration Platform
+// Architecture: Account → Apps → End Users → Connections
 
 generator client {
   provider = "prisma-client-js"
@@ -11,369 +11,460 @@ datasource db {
 }
 
 // ============================================
-// CORE MODELS - Users & Organizations
+// PLATFORM LAYER - Your Customers (Companies)
 // ============================================
 
-model Organization {
+model Account {
   id        String   @id @default(cuid())
-  name      String
+  email     String   @unique
+  name      String   // Company name
   slug      String   @unique
-  tier      String   @default("free") // free, pro, enterprise
-  settings  Json?
+  
+  // Subscription & Billing
+  plan      String   @default("free") // free, starter, pro, enterprise
+  status    String   @default("active") // active, suspended, cancelled
+  
+  // Limits
+  monthlyExecutionLimit Int      @default(10000)
+  monthlyExecutionsUsed Int      @default(0)
+  
+  // Auth
+  passwordHash String
+  emailVerified Boolean  @default(false)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  users            User[]
-  connections      Connection[]
-  workflows        Workflow[]
-  executions       WorkflowExecution[]
-  usageMetrics     UsageMetric[]
-  auditLogs        AuditLog[]
-  aiMappings       AiGeneratedMapping[]
-
+  // Relations
+  apps              App[]
+  users             AccountUser[] // Team members at Company X
+  auditLogs         AuditLog[]
+  
+  @@index([email])
   @@index([slug])
-  @@map("organizations")
+  @@map("accounts")
 }
 
-model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  name           String?
-  avatarUrl      String?
-  role           String   @default("member") // owner, admin, member
-  organizationId String
-  supabaseId     String?  @unique
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+model AccountUser {
+  id         String   @id @default(cuid())
+  accountId  String
+  email      String
+  name       String?
+  role       String   @default("member") // owner, admin, member, viewer
   
-  @@index([organizationId])
-  @@index([supabaseId])
-  @@map("users")
+  passwordHash String?
+  inviteToken  String?  @unique
+  invitedAt    DateTime?
+  joinedAt     DateTime?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  account    Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  @@unique([accountId, email])
+  @@index([accountId])
+  @@map("account_users")
 }
 
 // ============================================
-// INTEGRATIONS & CONNECTIONS
+// APP LAYER - Your Customer's Products
 // ============================================
 
-model Integration {
+model App {
   id          String   @id @default(cuid())
-  slug        String   @unique // google_sheets, notion, slack
-  name        String
-  description String?
-  category    String   // productivity, crm, database, communication
-  iconUrl     String?
-  version     String   @default("1.0.0")
-  status      String   @default("active") // active, deprecated, beta
-  authType    String   // oauth2, api_key, basic, custom
+  accountId   String
   
-  // Metadata
-  metadata    Json?    // Includes rate limits, API docs, etc.
+  name        String   // "X Product"
+  description String?
+  
+  // API Credentials for Company X
+  appId       String   @unique @default(cuid()) // Public identifier
+  apiKey      String   @unique // Secret API key (hashed)
+  
+  // Configuration
+  webhookUrl  String?  // Where to send event notifications
+  webhookSecret String?
+  
+  // Settings
+  allowedOrigins String[] // CORS origins
+  rateLimitPerMinute Int   @default(100)
+  
+  // Status
+  status      String   @default("active") // active, paused, suspended
+  
+  // Usage tracking
+  totalExecutions     Int      @default(0)
+  totalEndUsers       Int      @default(0)
+  totalConnections    Int      @default(0)
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  connections Connection[]
+  // Relations
+  account         Account           @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  endUsers        EndUser[]
+  connections     EndUserConnection[]
+  executions      Execution[]
+  enabledIntegrations AppIntegration[]
+  
+  @@index([accountId])
+  @@index([appId])
+  @@index([apiKey])
+  @@map("apps")
+}
+
+model AppIntegration {
+  id            String   @id @default(cuid())
+  appId         String
+  integrationId String   // Reference to integration catalog
+  
+  // Custom configuration per app
+  enabled       Boolean  @default(true)
+  customName    String?  // Custom display name
+  customIcon    String?
+  
+  // App-specific credentials (if needed)
+  // e.g., Company X's Slack workspace credentials for workspace-level actions
+  appCredentials Json?
+  
+  createdAt     DateTime @default(now())
+  
+  app           App      @relation(fields: [appId], references: [id], onDelete: Cascade)
+  integration   Integration @relation(fields: [integrationId], references: [id])
+  
+  @@unique([appId, integrationId])
+  @@index([appId])
+  @@map("app_integrations")
+}
+
+// ============================================
+// END USER LAYER - Your Customer's Customers
+// ============================================
+
+model EndUser {
+  id              String   @id @default(cuid())
+  appId           String
+  
+  // End user identifier (from Company X's system)
+  externalId      String   // Company X's user ID
+  email           String?
+  name            String?
+  
+  // Metadata from Company X
+  metadata        Json?    // Any custom data Company X wants to store
+  
+  // Status
+  status          String   @default("active") // active, inactive, deleted
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  lastActiveAt    DateTime?
+
+  // Relations
+  app             App                 @relation(fields: [appId], references: [id], onDelete: Cascade)
+  connections     EndUserConnection[]
+  executions      Execution[]
+  
+  @@unique([appId, externalId])
+  @@index([appId])
+  @@index([externalId])
+  @@map("end_users")
+}
+
+// ============================================
+// INTEGRATION CATALOG
+// ============================================
+
+model Integration {
+  id          String   @id @default(cuid())
+  slug        String   @unique // slack, notion, google_sheets
+  name        String
+  description String?
+  category    String   // communication, productivity, crm, etc.
+  
+  // Display
+  logo        String?
+  color       String?
+  website     String?
+  
+  // Auth configuration
+  authType    String   // oauth2, api_key, basic, custom
+  authConfig  Json     // OAuth URLs, scopes, etc.
+  
+  // Available actions & triggers
+  actions     Json     // List of available actions
+  triggers    Json?    // List of available triggers
+  
+  // Status
+  status      String   @default("available") // available, beta, deprecated
+  version     String   @default("1.0.0")
+  
+  // Requirements
+  requiresEndUserAuth Boolean @default(true) // Does each end-user need to connect?
+  requiresAppAuth     Boolean @default(false) // Does the app need credentials?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  connections EndUserConnection[]
+  executions  Execution[]
+  appIntegrations AppIntegration[]
   
   @@index([slug])
   @@index([category])
-  @@index([status])
   @@map("integrations")
 }
 
-model Connection {
-  id             String   @id @default(cuid())
-  organizationId String
-  integrationId  String
-  name           String   // User-friendly name
+// ============================================
+// CONNECTIONS - End User's OAuth/API Keys
+// ============================================
+
+model EndUserConnection {
+  id            String   @id @default(cuid())
+  appId         String
+  endUserId     String
+  integrationId String
   
-  // Auth data (encrypted)
-  credentials    Json     // Stores encrypted tokens, API keys
+  // Connection name (user-friendly)
+  name          String   // "My Slack Workspace"
   
-  // OAuth specific
-  accessToken    String?  @db.Text
-  refreshToken   String?  @db.Text
-  expiresAt      DateTime?
+  // Encrypted credentials
+  credentials   Json     // { accessToken, refreshToken, etc. }
+  encryptedData String?  @db.Text // Encrypted sensitive data
   
-  // Scopes & permissions
-  scopes         String[]
+  // OAuth metadata
+  scopes        String[]
+  expiresAt     DateTime?
   
   // Status
-  status         String   @default("active") // active, expired, revoked
-  lastUsedAt     DateTime?
+  status        String   @default("active") // active, expired, revoked, error
+  lastUsedAt    DateTime?
+  lastSyncedAt  DateTime?
   
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  // Error tracking
+  errorCount    Int      @default(0)
+  lastError     Json?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  integration    Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  // Relations
+  app           App         @relation(fields: [appId], references: [id], onDelete: Cascade)
+  endUser       EndUser     @relation(fields: [endUserId], references: [id], onDelete: Cascade)
+  integration   Integration @relation(fields: [integrationId], references: [id])
+  executions    Execution[]
   
-  @@index([organizationId])
+  @@unique([appId, endUserId, integrationId])
+  @@index([appId])
+  @@index([endUserId])
   @@index([integrationId])
   @@index([status])
-  @@map("connections")
+  @@map("end_user_connections")
 }
 
 // ============================================
-// WORKFLOWS
+// EXECUTION & LOGS
 // ============================================
 
-model Workflow {
-  id             String   @id @default(cuid())
-  organizationId String
-  name           String
-  description    String?
+model Execution {
+  id            String   @id @default(cuid())
+  appId         String
+  endUserId     String
+  connectionId  String
+  integrationId String
   
-  // Workflow Definition (JSON DSL)
-  definition     Json     // Contains trigger, steps, mappings, retry logic
-  
-  // Status
-  status         String   @default("draft") // draft, active, paused, archived
-  version        Int      @default(1)
-  
-  // Trigger configuration
-  triggerType    String   // webhook, schedule, manual, event
-  triggerConfig  Json?
-  
-  // Settings
-  settings       Json?    // Rate limits, timeouts, etc.
-  
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  lastRunAt      DateTime?
-
-  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  executions     WorkflowExecution[]
-  
-  @@index([organizationId])
-  @@index([status])
-  @@index([triggerType])
-  @@map("workflows")
-}
-
-// ============================================
-// WORKFLOW EXECUTIONS & LOGS
-// ============================================
-
-model WorkflowExecution {
-  id             String   @id @default(cuid())
-  workflowId     String
-  organizationId String
-  
-  // Execution metadata
-  status         String   // pending, running, success, failed, cancelled
-  triggerSource  String?  // webhook, manual, schedule
+  // What was executed
+  action        String   // e.g., "send_message", "create_page"
   
   // Input/Output
-  inputPayload   Json?
-  outputPayload  Json?
+  input         Json
+  output        Json?
   
   // Timing
-  startedAt      DateTime @default(now())
-  finishedAt     DateTime?
-  duration       Int?     // in milliseconds
-  
-  // Error handling
-  error          Json?
-  retryCount     Int      @default(0)
-  maxRetries     Int      @default(3)
-  
-  createdAt      DateTime @default(now())
-
-  workflow       Workflow   @relation(fields: [workflowId], references: [id], onDelete: Cascade)
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  stepLogs       WorkflowStepLog[]
-  
-  @@index([workflowId])
-  @@index([organizationId])
-  @@index([status])
-  @@index([startedAt])
-  @@map("workflow_executions")
-}
-
-model WorkflowStepLog {
-  id          String   @id @default(cuid())
-  executionId String
-  
-  // Step identification
-  stepNumber  Int
-  stepName    String
-  integration String
-  action      String
+  startedAt     DateTime @default(now())
+  finishedAt    DateTime?
+  duration      Int?     // milliseconds
   
   // Status
-  status      String   // pending, running, success, failed, skipped
+  status        String   // success, failed, pending, timeout
   
-  // Data
-  input       Json?
-  output      Json?
-  error       Json?
+  // Error details
+  errorCode     String?
+  errorMessage  String?  @db.Text
+  errorDetails  Json?
   
-  // Timing
-  startedAt   DateTime @default(now())
-  finishedAt  DateTime?
-  duration    Int?     // in milliseconds
+  // Retry tracking
+  retryCount    Int      @default(0)
+  maxRetries    Int      @default(3)
   
-  // Retry
-  retryCount  Int      @default(0)
+  // Request metadata
+  requestId     String   @unique @default(cuid())
+  ipAddress     String?
+  userAgent     String?
   
-  execution   WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  // Billing
+  billedAt      DateTime?
+  cost          Float?   // In credits/units
   
-  @@index([executionId])
+  createdAt     DateTime @default(now())
+
+  // Relations
+  app           App                 @relation(fields: [appId], references: [id], onDelete: Cascade)
+  endUser       EndUser             @relation(fields: [endUserId], references: [id], onDelete: Cascade)
+  connection    EndUserConnection   @relation(fields: [connectionId], references: [id])
+  integration   Integration         @relation(fields: [integrationId], references: [id])
+  
+  @@index([appId])
+  @@index([endUserId])
+  @@index([integrationId])
   @@index([status])
-  @@map("workflow_step_logs")
+  @@index([startedAt])
+  @@index([requestId])
+  @@map("executions")
 }
 
 // ============================================
-// AI-ASSISTED FEATURES
+// WEBHOOKS - Event notifications to Company X
 // ============================================
 
-model AiGeneratedMapping {
-  id             String   @id @default(cuid())
-  organizationId String
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  appId         String
   
-  // Source/Target
-  sourceSchema   Json
-  targetSchema   Json
+  // Event details
+  eventType     String   // execution.success, execution.failed, connection.created, etc.
+  payload       Json
   
-  // AI Generated mapping
-  mapping        Json
-  confidence     Float?
+  // Delivery
+  status        String   @default("pending") // pending, sent, failed
+  attempts      Int      @default(0)
+  maxAttempts   Int      @default(3)
   
-  // User feedback
-  accepted       Boolean  @default(false)
-  userModified   Boolean  @default(false)
+  // Response tracking
+  responseStatus Int?
+  responseBody   String?  @db.Text
+  lastAttemptAt  DateTime?
   
-  // Model used
-  model          String   // gpt-4, claude-3, etc.
+  createdAt     DateTime @default(now())
   
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  @@index([organizationId])
-  @@map("ai_generated_mappings")
+  @@index([appId])
+  @@index([status])
+  @@index([eventType])
+  @@map("webhook_events")
 }
 
 // ============================================
-// USAGE & METRICS
+// AUDIT & ANALYTICS
 // ============================================
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  accountId     String
+  appId         String?
+  userId        String?  // AccountUser or EndUser
+  
+  // Action details
+  action        String   // app.created, connection.authorized, execution.triggered
+  resource      String   // app, connection, execution
+  resourceId    String?
+  
+  // Changes
+  changes       Json?
+  
+  // Request context
+  ipAddress     String?
+  userAgent     String?
+  
+  createdAt     DateTime @default(now())
+
+  account       Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  
+  @@index([accountId])
+  @@index([appId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
 
 model UsageMetric {
-  id             String   @id @default(cuid())
-  organizationId String
+  id            String   @id @default(cuid())
+  accountId     String
+  appId         String?
   
-  // Metrics
-  metricType     String   // execution_count, api_calls, data_transferred
-  value          Int
+  // Metric type
+  metricType    String   // executions, end_users, connections, api_calls
+  value         Int
   
   // Dimensions
-  workflowId     String?
-  integrationId  String?
+  integrationId String?
   
-  // Time
-  periodStart    DateTime
-  periodEnd      DateTime
+  // Time period (hourly aggregation)
+  periodStart   DateTime
+  periodEnd     DateTime
   
-  createdAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
 
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  @@index([organizationId])
+  @@unique([accountId, appId, metricType, periodStart])
+  @@index([accountId])
+  @@index([appId])
   @@index([metricType])
   @@index([periodStart])
   @@map("usage_metrics")
 }
 
 // ============================================
-// AUDIT & SECURITY
+// OAUTH STATES - For secure OAuth flows
 // ============================================
 
-model AuditLog {
-  id             String   @id @default(cuid())
-  organizationId String
-  userId         String?
-  
-  // Action details
-  action         String   // workflow_created, connection_added, etc.
-  resource       String   // workflow, connection, integration
-  resourceId     String?
-  
-  // Changes
-  changes        Json?
-  
-  // Request metadata
-  ipAddress      String?
-  userAgent      String?
-  
-  createdAt      DateTime @default(now())
-
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  
-  @@index([organizationId])
-  @@index([action])
-  @@index([createdAt])
-  @@map("audit_logs")
-}
-
-// ============================================
-// ERROR TRACKING
-// ============================================
-
-model ErrorReport {
-  id             String   @id @default(cuid())
-  
-  // Error details
-  errorType      String
-  errorMessage   String   @db.Text
-  errorStack     String?  @db.Text
+model OAuthState {
+  id            String   @id @default(cuid())
+  state         String   @unique // Random state parameter
   
   // Context
-  workflowId     String?
-  executionId    String?
-  integrationId  String?
+  appId         String
+  endUserId     String
+  integrationId String
   
-  // Additional data
-  metadata       Json?
+  // Redirect
+  redirectUri   String   // Where to redirect after OAuth
   
-  // Status
-  status         String   @default("open") // open, investigating, resolved
+  // Security
+  codeVerifier  String?  // For PKCE
   
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@index([errorType])
-  @@index([status])
-  @@index([createdAt])
-  @@map("error_reports")
+  // Expiry
+  expiresAt     DateTime
+  usedAt        DateTime?
+  
+  createdAt     DateTime @default(now())
+  
+  @@index([state])
+  @@index([expiresAt])
+  @@map("oauth_states")
 }
 
 // ============================================
-// WEBHOOK ENDPOINTS
+// API KEYS - For token rotation
 // ============================================
 
-model WebhookEndpoint {
-  id             String   @id @default(cuid())
-  workflowId     String
+model ApiKeyVersion {
+  id        String   @id @default(cuid())
+  appId     String
   
-  // Endpoint details
-  url            String   @unique
-  secret         String   // For signature verification
+  keyHash   String   @unique
+  keyPrefix String   // First 8 chars for identification
   
-  // Status
-  status         String   @default("active")
+  status    String   @default("active") // active, revoked
   
-  // Stats
-  requestCount   Int      @default(0)
-  lastReceivedAt DateTime?
+  lastUsedAt DateTime?
+  expiresAt  DateTime?
   
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@index([workflowId])
-  @@index([status])
-  @@map("webhook_endpoints")
+  createdAt DateTime @default(now())
+  revokedAt DateTime?
+  
+  @@index([appId])
+  @@index([keyHash])
+  @@map("api_key_versions")
 }
 

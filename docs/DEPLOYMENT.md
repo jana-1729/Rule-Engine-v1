@@ -1,68 +1,63 @@
-# Deployment Guide
+# Deployment Guide - B2B2C Integration Platform
 
-## Overview
+Complete guide to deploying your embedded integration platform to production.
 
-This guide covers deploying the integration platform to production. The system consists of two main components:
-
-1. **Next.js Application** (Frontend + API)
-2. **Background Workers** (Job processing)
+---
 
 ## Prerequisites
 
 - Node.js 18+
-- PostgreSQL database (Supabase recommended)
-- Redis (Upstash recommended)
-- OpenAI API key
-- Domain name with SSL
+- PostgreSQL database
+- Redis instance
+- Domain with SSL
+- OAuth credentials for each integration
 
-## Deployment Options
+---
 
-### Option 1: Vercel + Separate Worker (Recommended)
+## Option 1: Vercel + Railway (Recommended)
 
-**Pros**: Easy deployment, auto-scaling, zero-config
-**Cons**: Workers need separate hosting
-
-#### Step 1: Deploy Next.js to Vercel
+### Step 1: Deploy API to Vercel
 
 ```bash
 # Install Vercel CLI
 npm i -g vercel
 
 # Deploy
-vercel deploy --prod
-
-# Set environment variables in Vercel dashboard
+vercel --prod
 ```
 
-Environment variables needed:
+### Step 2: Set Environment Variables in Vercel
+
+```bash
+# Database
+DATABASE_URL=postgresql://user:pass@host:5432/db
+
+# Redis
+UPSTASH_REDIS_REST_URL=https://xxx.upstash.io
+UPSTASH_REDIS_REST_TOKEN=xxx
+
+# App
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+ENCRYPTION_KEY=your-32-character-key
+
+# Integration OAuth Credentials
+SLACK_CLIENT_ID=xxx
+SLACK_CLIENT_SECRET=xxx
+NOTION_CLIENT_ID=xxx
+NOTION_CLIENT_SECRET=xxx
 ```
-DATABASE_URL
-NEXT_PUBLIC_SUPABASE_URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY
-UPSTASH_REDIS_REST_URL
-UPSTASH_REDIS_REST_TOKEN
-OPENAI_API_KEY
-NEXT_PUBLIC_APP_URL
-ENCRYPTION_KEY
-```
 
-#### Step 2: Deploy Worker
+### Step 3: Deploy Worker to Railway
 
-**Option A: Railway**
+Create `railway.toml`:
+```toml
+[build]
+builder = "NIXPACKS"
 
-```yaml
-# railway.json
-{
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "deploy": {
-    "startCommand": "npm run worker",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  }
-}
+[deploy]
+startCommand = "npm run worker"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
 ```
 
 Deploy:
@@ -70,75 +65,34 @@ Deploy:
 railway up
 ```
 
-**Option B: Render**
-
-```yaml
-# render.yaml
-services:
-  - type: worker
-    name: workflow-worker
-    env: node
-    buildCommand: npm install
-    startCommand: npm run worker
-    autoDeploy: true
-    envVars:
-      - key: NODE_ENV
-        value: production
-```
-
-**Option C: AWS ECS**
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY . .
-CMD ["npm", "run", "worker"]
-```
-
-Deploy with Fargate for auto-scaling.
-
 ---
 
-### Option 2: Docker Compose (Self-Hosted)
+## Option 2: Docker (Self-Hosted)
 
-Full stack deployment with Docker.
-
-#### docker-compose.yml
+### docker-compose.yml
 
 ```yaml
 version: '3.8'
 
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
       - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL}
       - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
     depends_on:
       - postgres
       - redis
-    restart: unless-stopped
 
   worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.worker
+    build: .
+    command: npm run worker
     environment:
-      - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
       - UPSTASH_REDIS_REST_URL=${UPSTASH_REDIS_REST_URL}
       - UPSTASH_REDIS_REST_TOKEN=${UPSTASH_REDIS_REST_TOKEN}
@@ -146,93 +100,26 @@ services:
     depends_on:
       - postgres
       - redis
-    restart: unless-stopped
     deploy:
-      replicas: 3  # Scale workers
+      replicas: 3
 
   postgres:
     image: postgres:15-alpine
     environment:
-      - POSTGRES_DB=integration_platform
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      POSTGRES_DB: integration_platform
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
-    restart: unless-stopped
-
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./ssl:/etc/nginx/ssl
-    depends_on:
-      - app
-    restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
-```
-
-#### Dockerfile
-
-```dockerfile
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-
-COPY . .
-RUN npm run build
-
-FROM node:18-alpine AS runner
-
-WORKDIR /app
-
-ENV NODE_ENV production
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT 3000
-
-CMD ["node", "server.js"]
-```
-
-#### Dockerfile.worker
-
-```dockerfile
-FROM node:18-alpine
-
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-RUN npm run db:generate
-
-CMD ["npm", "run", "worker"]
 ```
 
 Deploy:
@@ -242,374 +129,243 @@ docker-compose up -d
 
 ---
 
-### Option 3: Kubernetes
-
-For large-scale production deployments.
-
-#### deployment.yaml
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: integration-platform-app
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: integration-platform-app
-  template:
-    metadata:
-      labels:
-        app: integration-platform-app
-    spec:
-      containers:
-      - name: app
-        image: your-registry/integration-platform:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: database-url
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "250m"
-          limits:
-            memory: "512Mi"
-            cpu: "500m"
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: integration-platform-worker
-spec:
-  replicas: 5
-  selector:
-    matchLabels:
-      app: integration-platform-worker
-  template:
-    metadata:
-      labels:
-        app: integration-platform-worker
-    spec:
-      containers:
-      - name: worker
-        image: your-registry/integration-platform-worker:latest
-        env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: app-secrets
-              key: database-url
-        resources:
-          requests:
-            memory: "512Mi"
-            cpu: "500m"
-          limits:
-            memory: "1Gi"
-            cpu: "1000m"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: integration-platform-service
-spec:
-  selector:
-    app: integration-platform-app
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3000
-  type: LoadBalancer
-```
-
-Deploy:
-```bash
-kubectl apply -f deployment.yaml
-```
-
----
-
 ## Database Setup
 
-### Supabase (Recommended)
+### Option 1: Supabase (Recommended)
 
-1. Create a new project at https://supabase.com
-2. Get your connection string
+1. Create project at https://supabase.com
+2. Get connection string
 3. Run migrations:
 
 ```bash
-# Set DATABASE_URL
-export DATABASE_URL="postgresql://..."
+npm run db:push
+```
+
+4. Enable RLS:
+
+```sql
+-- Enable Row-Level Security
+ALTER TABLE accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE apps ENABLE ROW LEVEL SECURITY;
+ALTER TABLE end_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE end_user_connections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE executions ENABLE ROW LEVEL SECURITY;
+
+-- Create policies
+CREATE POLICY "Apps can only see their own data"
+  ON executions FOR ALL
+  USING (app_id IN (
+    SELECT id FROM apps WHERE account_id = current_setting('app.current_account_id')::text
+  ));
+```
+
+### Option 2: Self-Hosted PostgreSQL
+
+```bash
+# Install PostgreSQL
+sudo apt install postgresql-15
+
+# Create database
+sudo -u postgres createdb integration_platform
 
 # Run migrations
 npm run db:push
 ```
 
-4. Enable Row-Level Security (RLS):
+---
 
-```sql
--- Enable RLS on all tables
-ALTER TABLE organizations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workflows ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workflow_executions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE connections ENABLE ROW LEVEL SECURITY;
+## OAuth Configuration
 
--- Create policies
-CREATE POLICY "Users can only access their organization's data"
-  ON workflows
-  FOR ALL
-  USING (organization_id IN (
-    SELECT organization_id FROM users WHERE id = auth.uid()
-  ));
+For each integration, you need to:
 
--- Repeat for other tables...
-```
+1. Create OAuth app in provider's developer portal
+2. Set redirect URI to: `https://your-domain.com/api/v1/connections/callback`
+3. Add credentials to environment variables
 
-### Self-Hosted PostgreSQL
+### Slack
+
+1. Go to https://api.slack.com/apps
+2. Create new app
+3. Add OAuth redirect URL: `https://your-domain.com/api/v1/connections/callback`
+4. Get credentials:
 
 ```bash
-# Install PostgreSQL
-sudo apt-get install postgresql-15
+SLACK_CLIENT_ID=xxx
+SLACK_CLIENT_SECRET=xxx
+```
 
-# Create database
-sudo -u postgres psql
-CREATE DATABASE integration_platform;
-CREATE USER app_user WITH PASSWORD 'secure_password';
-GRANT ALL PRIVILEGES ON DATABASE integration_platform TO app_user;
+### Notion
 
-# Run migrations
-npm run db:migrate
+1. Go to https://www.notion.so/my-integrations
+2. Create new integration
+3. Get credentials:
+
+```bash
+NOTION_CLIENT_ID=xxx
+NOTION_CLIENT_SECRET=xxx
+```
+
+### Google (Sheets, Calendar, etc.)
+
+1. Go to https://console.cloud.google.com
+2. Create OAuth 2.0 Client ID
+3. Add redirect URI
+4. Get credentials:
+
+```bash
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
 ```
 
 ---
 
-## Redis Setup
+## SSL Setup
 
-### Upstash (Recommended)
+### Option 1: Cloudflare (Easiest)
 
-1. Create a Redis database at https://upstash.com
-2. Copy REST URL and token
-3. Add to environment variables
+1. Add domain to Cloudflare
+2. Point DNS to your server
+3. Enable "Full (strict)" SSL mode
+4. Done! Cloudflare handles SSL
 
-### Self-Hosted Redis
-
-```bash
-# Install Redis
-sudo apt-get install redis-server
-
-# Configure for production
-sudo nano /etc/redis/redis.conf
-
-# Set:
-# maxmemory 2gb
-# maxmemory-policy allkeys-lru
-# appendonly yes
-
-# Restart
-sudo systemctl restart redis
-```
-
----
-
-## SSL/TLS Setup
-
-### Option 1: Let's Encrypt (Free)
+### Option 2: Let's Encrypt
 
 ```bash
 # Install Certbot
-sudo apt-get install certbot
+sudo apt install certbot
 
 # Get certificate
-sudo certbot certonly --standalone -d yourdomain.com
+sudo certbot certonly --standalone -d your-domain.com
 
 # Configure Nginx
 server {
     listen 443 ssl http2;
-    server_name yourdomain.com;
+    server_name your-domain.com;
     
-    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
     
     location / {
         proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
     }
 }
 ```
-
-### Option 2: Cloudflare
-
-1. Add domain to Cloudflare
-2. Enable "Full (strict)" SSL mode
-3. Point DNS to your server
-4. Cloudflare handles SSL automatically
 
 ---
 
 ## Monitoring
 
-### Health Checks
+### Health Check Endpoint
 
 Add to your deployment:
 
 ```typescript
-// pages/api/health.ts
-export default function handler(req, res) {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
+// src/app/api/health/route.ts
+export async function GET() {
+  return Response.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString() 
+  });
 }
 ```
 
 ### Logging
 
-Use a service like:
-- **LogTail** (Recommended)
-- **Datadog**
-- **New Relic**
+Use Logtail or Datadog:
 
 ```bash
-# Install LogTail
 npm install @logtail/node
 
-# In your app
+# In your code
 import { Logtail } from '@logtail/node';
 const logtail = new Logtail(process.env.LOGTAIL_TOKEN);
+logtail.info('Server started');
 ```
 
 ### Metrics
 
-Use Prometheus + Grafana:
-
-```yaml
-# docker-compose.yml
-prometheus:
-  image: prom/prometheus
-  volumes:
-    - ./prometheus.yml:/etc/prometheus/prometheus.yml
-  ports:
-    - "9090:9090"
-
-grafana:
-  image: grafana/grafana
-  ports:
-    - "3001:3000"
-  environment:
-    - GF_SECURITY_ADMIN_PASSWORD=admin
-```
+Track:
+- API request rate
+- Execution success/failure rate
+- Response times
+- Queue depth
+- Database connections
 
 ---
 
-## Scaling Guidelines
+## Scaling
 
 ### Horizontal Scaling
 
-**Workers**:
-- Start with 3 workers
-- Add 1 worker per 1000 executions/hour
-- Monitor queue depth
-
-**API**:
-- Auto-scales on Vercel
+**API Servers**:
+- Vercel auto-scales
 - For self-hosted: Use load balancer
 
-### Vertical Scaling
+**Workers**:
+```yaml
+# Scale to 5 workers
+docker-compose up -d --scale worker=5
+```
 
 **Database**:
 - Start: 2 GB RAM, 1 vCPU
 - Production: 8 GB RAM, 4 vCPU
-- Enable read replicas for analytics
+- Enable read replicas
 
-**Workers**:
-- Memory: 512 MB minimum
-- CPU: 1 vCPU per 2 workers
+### Caching
+
+Use Redis to cache:
+- Integration metadata
+- App configurations
+- Rate limit counters
 
 ---
 
-## Backup Strategy
+## Backups
 
 ### Database
 
 ```bash
 # Daily backups
-pg_dump -U app_user -d integration_platform > backup_$(date +%Y%m%d).sql
+pg_dump $DATABASE_URL > backup_$(date +%Y%m%d).sql
 
 # Restore
-psql -U app_user -d integration_platform < backup_20240101.sql
+psql $DATABASE_URL < backup_20240101.sql
 ```
 
 ### Redis
 
-```bash
-# Enable AOF persistence
-CONFIG SET appendonly yes
-
-# Backup
-redis-cli BGSAVE
+Enable persistence in redis.conf:
+```
+appendonly yes
 ```
 
 ---
 
 ## Security Checklist
 
-- [ ] Environment variables not committed to git
 - [ ] SSL/TLS enabled
-- [ ] Database credentials encrypted
+- [ ] Environment variables not in git
+- [ ] API keys hashed in database
+- [ ] OAuth tokens encrypted (AES-256)
 - [ ] RLS policies enabled
 - [ ] Rate limiting configured
-- [ ] CORS properly configured
+- [ ] CORS properly set
 - [ ] Webhook signatures verified
-- [ ] Regular security audits
+- [ ] Security headers set
 - [ ] Dependencies updated
-- [ ] Secrets rotated regularly
-
----
-
-## Troubleshooting
-
-### Workers not processing jobs
-
-```bash
-# Check worker logs
-docker logs integration-platform-worker
-
-# Check Redis queue
-redis-cli
-> ZCARD workflow:queue
-
-# Manually trigger worker
-npm run worker
-```
-
-### High latency
-
-- Check database connection pool
-- Enable caching (Redis)
-- Optimize queries (add indexes)
-- Scale workers horizontally
-
-### Memory leaks
-
-- Monitor with `top` or `htop`
-- Use Node.js `--inspect` flag
-- Check for unclosed connections
 
 ---
 
 ## Production Checklist
 
-- [ ] Environment variables set
 - [ ] Database migrations run
+- [ ] Environment variables set
+- [ ] OAuth apps configured
 - [ ] SSL certificates installed
-- [ ] Workers deployed and running
+- [ ] Workers deployed
 - [ ] Health checks passing
 - [ ] Monitoring enabled
 - [ ] Backups configured
@@ -619,5 +375,15 @@ npm run worker
 
 ---
 
-**Your platform is now production-ready!** 🚀
+## Post-Deployment
+
+1. Test OAuth flow with real integration
+2. Create test account and execute actions
+3. Monitor logs for errors
+4. Check webhook delivery
+5. Verify rate limiting works
+
+---
+
+**Your platform is production-ready!** 🚀
 

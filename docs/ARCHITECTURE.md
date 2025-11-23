@@ -1,341 +1,504 @@
-# System Architecture
+# B2B2C Embedded Integration Platform Architecture
 
 ## Overview
 
-This integration platform follows a **microservices-inspired architecture** within a Next.js monorepo, designed for **horizontal scalability**, **fault tolerance**, and **modularity**.
+This platform is a **B2B2C embedded integration service** where:
+- **You** (Rule-Engine) provide the infrastructure
+- **Your Customers** (Companies like "Company X") integrate your APIs into their product
+- **Their End Users** (Company X's customers) connect their own Slack, Notion, etc.
 
-## High-Level Architecture
+## Business Model
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Frontend (Next.js)                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Workflow    │  │ Integration  │  │  Dashboard   │     │
-│  │  Builder     │  │  Gallery     │  │   & Logs     │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    API Layer (Next.js)                       │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Workflows   │  │ Integrations │  │  AI Service  │     │
-│  │  API         │  │  API         │  │   API        │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      Service Layer                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │   Queue      │  │ Credentials  │  │   Metrics    │     │
-│  │  Service     │  │  Service     │  │  Service     │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   Background Workers                         │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Execution   │  │   Trigger    │  │   Cleanup    │     │
-│  │   Worker     │  │   Worker     │  │   Worker     │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Data & Infrastructure                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  PostgreSQL  │  │  Redis       │  │   OpenAI     │     │
-│  │  (Supabase)  │  │  (Upstash)   │  │   API        │     │
-│  └──────────────┘  └──────────────┘  └──────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+Rule-Engine Platform
+  │
+  ├── Account: Company X (SaaS company)
+  │     ├── App: "X Product" 
+  │     │     ├── API Credentials: appId + apiKey
+  │     │     └── End Users: 100+ customers of Company X
+  │     │           ├── End User 1
+  │     │           │     └── Connections: Slack, Notion
+  │     │           └── End User 2
+  │     │                 └── Connections: Google Sheets
+  │     └── App: "X Mobile App"
+  │           └── End Users: ...
+  │
+  └── Account: Company Y
+        └── App: "Y Platform"
+              └── End Users: ...
 ```
 
-## Core Components
+## Data Hierarchy
 
-### 1. Integration Plugin System
+### Level 1: Account (Your Customer)
+- The company that signs up for your service
+- Email/password login for dashboard access
+- Billing and subscription management
+- Can have multiple apps
 
-**Goal**: Support 1000+ integrations without code changes to core platform
+### Level 2: App (Their Product)
+- Each account can create multiple apps (web, mobile, etc.)
+- Each app gets unique `appId` and `apiKey`
+- API credentials used to authenticate API calls
+- Webhook URL for event notifications
 
-**Design**:
-- Each integration is a self-contained module
-- Follows `Integration` interface contract
-- Auto-discovered via registry
-- Versioned independently
+### Level 3: End User (Their Customer)
+- Company X's users (identified by external ID from Company X)
+- Can connect multiple integrations
+- Each end user's connections are isolated
 
-**Structure**:
-```typescript
-interface Integration {
-  metadata: IntegrationMetadata;
-  auth: AuthConfig;
-  actions: Record<string, IntegrationAction>;
-  triggers: Record<string, IntegrationTrigger>;
+### Level 4: Connection (End User's OAuth Token)
+- Each end user can connect to Slack, Notion, etc.
+- OAuth tokens stored encrypted
+- Connection status tracked
+
+### Level 5: Execution (API Call Log)
+- Every action execution is logged
+- Tracks which app, end user, and integration was used
+- Success/failure status, duration, error details
+
+## How It Works
+
+### Step 1: Company X Signs Up
+
+**Endpoint**: `POST /api/v1/apps`
+
+```bash
+curl -X POST https://your-platform.com/api/v1/apps \
+  -H "Content-Type: application/json" \
+  -d '{
+    "accountEmail": "admin@company-x.com",
+    "accountPassword": "secure-password",
+    "accountName": "Company X",
+    "appName": "Company X Product",
+    "webhookUrl": "https://company-x.com/webhooks/integrations"
+  }'
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "app": {
+    "appId": "app_abc123xyz",
+    "apiKey": "app_abc123xyz_4f8h3j2k9l1m5n6p7q8r9s0t", 
+    "webhookSecret": "whsec_...",
+    "name": "Company X Product"
+  },
+  "message": "Save your API key - it will not be shown again!"
 }
 ```
 
-**Scaling Strategy**:
-- Lazy loading: Integrations loaded on-demand
-- Plugin versioning: Support multiple versions simultaneously
-- Dynamic imports: Reduce initial bundle size
-- Registry caching: In-memory registry with Redis fallback
+Company X stores these credentials securely.
 
-### 2. Workflow Engine
+### Step 2: Company X Lists Available Integrations
 
-**Goal**: Execute workflows reliably at scale
+**Endpoint**: `GET /api/v1/integrations`
 
-**Components**:
-- **Engine**: Orchestrates workflow execution
-- **Field Mapper**: Applies data transformations
-- **Validator**: Pre-execution validation
-
-**Execution Flow**:
-```
-1. Receive trigger payload
-2. Validate workflow definition
-3. Create execution record
-4. For each step:
-   a. Get integration action
-   b. Fetch & decrypt credentials
-   c. Apply field mappings
-   d. Execute action
-   e. Log results
-5. Update execution status
+```bash
+curl https://your-platform.com/api/v1/integrations \
+  -H "X-API-Key: app_abc123xyz_4f8h3j2k9l1m5n6p7q8r9s0t"
 ```
 
-**Error Handling**:
-- Per-step retry with exponential backoff
-- `continueOnError` flag for non-critical steps
-- Dead letter queue for failed executions
-- Automatic rollback (future enhancement)
+**Response**:
+```json
+{
+  "integrations": [
+    {
+      "slug": "slack",
+      "name": "Slack",
+      "description": "Team communication",
+      "logo": "https://...",
+      "authType": "oauth2",
+      "enabled": true,
+      "connectedUsers": 45,
+      "actions": [
+        {
+          "id": "send_message",
+          "name": "Send Message",
+          "description": "Send a message to a channel"
+        }
+      ]
+    },
+    {
+      "slug": "notion",
+      "name": "Notion",
+      ...
+    }
+  ]
+}
+```
 
-### 3. Queue System
+Company X displays these on their settings page.
 
-**Goal**: Handle millions of executions with graceful degradation
+### Step 3: End User Connects Slack
 
-**Design**:
-- Redis Sorted Sets for priority queues
-- Separate queues: `pending`, `processing`, `scheduled`, `dead_letter`
-- Worker pool for parallel processing
-- Job deduplication to prevent duplicates
+When End User clicks "Connect Slack" in Company X's app:
 
-**Queue Operations**:
+**Step 3a**: Company X initiates OAuth flow
+
+```bash
+curl -X POST https://your-platform.com/api/v1/connections/authorize \
+  -H "X-API-Key: app_abc123xyz_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endUserId": "user-789-from-company-x",
+    "integrationSlug": "slack",
+    "redirectUri": "https://company-x.com/integrations/callback",
+    "metadata": {
+      "email": "john@example.com",
+      "name": "John Doe"
+    }
+  }'
+```
+
+**Response**:
+```json
+{
+  "authorizationUrl": "https://slack.com/oauth/authorize?client_id=...&state=state_xyz",
+  "state": "state_xyz",
+  "expiresAt": "2024-01-01T10:10:00Z"
+}
+```
+
+**Step 3b**: Company X redirects end user to `authorizationUrl`
+
+**Step 3c**: User authorizes Slack
+
+**Step 3d**: Slack redirects to:
+```
+https://your-platform.com/api/v1/connections/callback?code=xxx&state=state_xyz
+```
+
+**Step 3e**: Your platform:
+- Exchanges code for access token
+- Encrypts and stores token
+- Creates connection record
+- Sends webhook to Company X
+- Redirects to Company X's `redirectUri`:
+
+```
+https://company-x.com/integrations/callback?success=true&connectionId=conn_123&integration=slack
+```
+
+**Step 3f**: Company X shows "Slack Connected!" ✅
+
+### Step 4: Company X Sends Slack Message (Using Your API)
+
+When Company X wants to send a Slack message for their user:
+
+```bash
+curl -X POST https://your-platform.com/api/v1/integrations/slack/actions/send_message \
+  -H "X-API-Key: app_abc123xyz_..." \
+  -H "Content-Type: application/json" \
+  -d '{
+    "endUserId": "user-789-from-company-x",
+    "input": {
+      "channel": "#general",
+      "text": "Hello from Company X!"
+    }
+  }'
+```
+
+**Your platform**:
+1. Verifies API key → gets App
+2. Finds End User by external ID
+3. Gets End User's Slack connection
+4. Decrypts access token
+5. Calls Slack API with user's token
+6. Logs execution
+7. Sends webhook to Company X
+
+**Response**:
+```json
+{
+  "success": true,
+  "executionId": "exec_xyz789",
+  "data": {
+    "ok": true,
+    "channel": "C123456",
+    "ts": "1234567890.123456",
+    "message": { ... }
+  },
+  "duration": 234
+}
+```
+
+### Step 5: Company X Views Logs
+
+```bash
+curl https://your-platform.com/api/v1/executions?limit=10&status=success \
+  -H "X-API-Key: app_abc123xyz_..."
+```
+
+**Response**:
+```json
+{
+  "executions": [
+    {
+      "id": "exec_xyz789",
+      "requestId": "exec_xyz789",
+      "endUser": {
+        "id": "user-789-from-company-x",
+        "email": "john@example.com",
+        "name": "John Doe"
+      },
+      "integration": {
+        "slug": "slack",
+        "name": "Slack",
+        "logo": "https://..."
+      },
+      "action": "send_message",
+      "status": "success",
+      "input": { "channel": "#general", "text": "..." },
+      "output": { "ok": true, ... },
+      "startedAt": "2024-01-01T10:00:00Z",
+      "finishedAt": "2024-01-01T10:00:01Z",
+      "duration": 234
+    }
+  ],
+  "stats": {
+    "total": 1000,
+    "success": 980,
+    "failed": 20
+  }
+}
+```
+
+## Key Differences from Original Architecture
+
+| Aspect | Original (Zapier Clone) | New (B2B2C Embedded) |
+|--------|------------------------|----------------------|
+| **Users** | Direct end users | Your B2B customers |
+| **Authentication** | User login | API key per app |
+| **OAuth** | Platform's OAuth credentials | End users' OAuth tokens |
+| **API** | Internal only | Public API for customers |
+| **Billing** | Per user | Per account/app |
+| **Logs** | Per user | Per app (all their users) |
+| **Branding** | Your brand | White-label capable |
+
+## Database Schema Key Changes
+
+### New Tables
+- `accounts` - Your customers (Company X, Y, Z)
+- `account_users` - Team members at each company
+- `apps` - Each customer's products
+- `app_integrations` - Which integrations each app enabled
+- `end_users` - Company X's customers
+- `end_user_connections` - End users' OAuth tokens
+- `executions` - Every API call logged
+- `oauth_states` - Secure OAuth flow tracking
+- `api_key_versions` - Key rotation support
+- `webhook_events` - Events sent to customers
+
+### Key Relationships
+```sql
+Account (Company X)
+  → App (X Product)
+      → End User (X's customer)
+          → End User Connection (Slack OAuth)
+              → Execution (API call log)
+```
+
+## API Authentication
+
+### Two Types of Auth
+
+**1. Account Dashboard Auth** (Email/Password)
+- For Company X admin to login to your dashboard
+- Manage apps, view analytics, billing
+- Uses session cookies
+
+**2. API Key Auth** (appId + apiKey)
+- For Company X's backend to call your APIs
+- Included in `X-API-Key` header
+- Never expires (but can be rotated)
+
+## Webhooks to Company X
+
+You send webhooks to Company X when events occur:
+
+**Events**:
+- `connection.created` - End user connected integration
+- `connection.expired` - OAuth token expired
+- `execution.success` - Action executed successfully
+- `execution.failed` - Action failed
+
+**Webhook Payload**:
+```json
+{
+  "event": "execution.success",
+  "timestamp": "2024-01-01T10:00:00Z",
+  "data": {
+    "executionId": "exec_xyz",
+    "endUserId": "user-789-from-company-x",
+    "integration": "slack",
+    "action": "send_message",
+    "status": "success",
+    "duration": 234
+  }
+}
+```
+
+**Headers**:
+```
+Content-Type: application/json
+X-Webhook-Secret: whsec_abc123...
+```
+
+## Billing Model
+
+Company X pays based on:
+- **Number of end users**
+- **Number of API calls/executions**
+- **Number of active connections**
+
+Track usage with `usage_metrics` table.
+
+## Multi-Integration Support
+
+### OAuth2 Integrations (Slack, Notion, Google)
+1. End user clicks "Connect" in Company X's app
+2. Company X calls your `/authorize` endpoint
+3. You return OAuth URL
+4. User authorizes
+5. You handle callback, store token
+6. Company X can now use your API
+
+### API Key Integrations (OpenAI, SendGrid)
+1. End user provides their API key in Company X's app
+2. Company X calls your API to save connection
+3. You encrypt and store API key
+4. Company X can now use your API
+
+### No-Auth Integrations (HTTP webhooks)
+1. No connection needed
+2. Company X just calls your API
+3. You execute the action
+
+## Scalability
+
+### Horizontal Scaling
+- API servers: Load balanced
+- Workers: Process executions from queue
+- Database: Read replicas for analytics
+
+### Performance
+- Cache integration metadata (Redis)
+- Batch log writes
+- Async webhook delivery
+- Connection pooling
+
+### Limits
+- Rate limit per app (default: 100 req/min)
+- Execution timeout (default: 30s)
+- Monthly execution limits per plan
+
+## Security
+
+### API Key Security
+- API keys hashed before storage (SHA-256)
+- Prefix stored for identification
+- Can rotate keys
+- Track last used timestamp
+
+### OAuth Token Security
+- Access tokens encrypted at rest (AES-256-GCM)
+- Refresh tokens encrypted separately
+- Automatic token refresh before expiry
+- Revoke tokens on connection deletion
+
+### Webhook Security
+- Signature verification (HMAC-SHA256)
+- Retry with exponential backoff
+- Dead letter queue for failed webhooks
+
+## Company X's Integration
+
+### Their Backend Code
+
 ```typescript
-enqueueWorkflow(workflowId, payload, priority?)
-dequeueJob() -> Job | null
-completeJob(jobId)
-failJob(jobId, error) // Handles retry logic
+// Company X's Node.js backend
+
+const RULE_ENGINE_API_KEY = process.env.RULE_ENGINE_API_KEY;
+const BASE_URL = 'https://your-platform.com/api/v1';
+
+// List integrations to show in settings
+async function getAvailableIntegrations() {
+  const response = await fetch(`${BASE_URL}/integrations`, {
+    headers: {
+      'X-API-Key': RULE_ENGINE_API_KEY,
+    },
+  });
+  return response.json();
+}
+
+// Start OAuth flow for user
+async function connectIntegration(userId: string, integration: string) {
+  const response = await fetch(`${BASE_URL}/connections/authorize`, {
+    method: 'POST',
+    headers: {
+      'X-API-Key': RULE_ENGINE_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      endUserId: userId,
+      integrationSlug: integration,
+      redirectUri: 'https://company-x.com/integrations/callback',
+      metadata: {
+        email: user.email,
+        name: user.name,
+      },
+    }),
+  });
+  
+  const { authorizationUrl } = await response.json();
+  return authorizationUrl; // Redirect user here
+}
+
+// Send Slack message
+async function sendSlackMessage(userId: string, channel: string, text: string) {
+  const response = await fetch(
+    `${BASE_URL}/integrations/slack/actions/send_message`,
+    {
+      method: 'POST',
+      headers: {
+        'X-API-Key': RULE_ENGINE_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        endUserId: userId,
+        input: { channel, text },
+      }),
+    }
+  );
+  
+  return response.json();
+}
+
+// Get execution logs
+async function getExecutions(filters = {}) {
+  const params = new URLSearchParams(filters);
+  const response = await fetch(`${BASE_URL}/executions?${params}`, {
+    headers: {
+      'X-API-Key': RULE_ENGINE_API_KEY,
+    },
+  });
+  return response.json();
+}
 ```
 
-**Scaling**:
-- Horizontal scaling: Multiple workers across nodes
-- Priority lanes: High-priority jobs processed first
-- Backpressure handling: Graceful degradation under load
-- Monitoring: Queue depth, processing rate, lag
+## Dashboard for Company X
 
-### 4. Credential Management
+Company X logs into your dashboard at `https://your-platform.com/dashboard` to:
+- View all executions across all their end users
+- See success/failure rates
+- Monitor which integrations are most used
+- Manage API keys
+- Configure webhooks
+- View billing and usage
 
-**Goal**: Secure storage and access to OAuth tokens and API keys
+---
 
-**Security Layers**:
-1. **Encryption**: AES-256-GCM for credentials at rest
-2. **Rotation**: Automatic OAuth token refresh
-3. **Scopes**: Fine-grained permission validation
-4. **Audit**: All credential access logged
-
-**Flow**:
-```
-Create Connection:
-  → User grants OAuth permission
-  → Platform receives tokens
-  → Encrypt with master key
-  → Store in database
-
-Use Connection:
-  → Fetch encrypted credentials
-  → Decrypt on-demand
-  → Check expiration
-  → Auto-refresh if needed
-  → Return to workflow
-```
-
-### 5. Observability Stack
-
-**Logging Levels**:
-- **Step Logs**: Input/output/error for each step
-- **Execution Logs**: Overall workflow status
-- **Audit Logs**: User actions and changes
-- **Error Logs**: System errors and failures
-
-**Metrics Tracked**:
-- Execution counts (success/failure)
-- Duration (average, p50, p95, p99)
-- Integration usage
-- Error rates
-- Queue depth
-
-**Monitoring Dashboard**:
-- Real-time execution status
-- Historical trends
-- Error rate alerts
-- Performance bottlenecks
-
-## Scalability Design
-
-### Database (PostgreSQL via Supabase)
-
-**Optimization**:
-- **Partitioning**: `workflow_executions` partitioned by month
-- **Indexes**: Compound indexes on `(organizationId, status, createdAt)`
-- **Connection Pooling**: PgBouncer with 100 max connections
-- **RLS**: Row-Level Security for multi-tenancy
-
-**Query Patterns**:
-- List workflows: Index on `organizationId`
-- Execution history: Partitioned table with time-based queries
-- Metrics: Aggregated materialized views (future)
-
-### Redis (Upstash)
-
-**Usage**:
-- Job queue (Sorted Sets)
-- Rate limiting (Token bucket)
-- Session storage
-- Cache layer (integration metadata)
-
-**Scaling**:
-- Upstash auto-scales
-- Regional replication for latency
-- Lua scripts for atomic operations
-
-### Workers
-
-**Design**:
-- Stateless: Can scale horizontally
-- Graceful shutdown: Finish in-progress jobs
-- Health checks: `/health` endpoint
-- Auto-restart on failure
-
-**Deployment**:
-```
-Production:
-  - 5+ worker nodes
-  - Load balancer
-  - Auto-scaling based on queue depth
-  - Different regions for global coverage
-```
-
-## Data Flow
-
-### Workflow Execution (End-to-End)
-
-```
-User clicks "Run Workflow"
-  ↓
-POST /api/workflows/execute
-  ↓
-Validate workflow exists & is active
-  ↓
-enqueueWorkflow() → Redis queue
-  ↓
-Worker dequeues job
-  ↓
-workflowEngine.executeWorkflow()
-  ├─ Create execution record (DB)
-  ├─ Get workflow definition (DB)
-  ├─ For each step:
-  │   ├─ Get action from registry
-  │   ├─ Fetch credentials (DB + decrypt)
-  │   ├─ Apply field mappings
-  │   ├─ Execute action (External API)
-  │   └─ Log step result (DB)
-  └─ Update execution status (DB)
-  ↓
-Notify user (webhook/email)
-```
-
-### OAuth Connection Flow
-
-```
-User clicks "Connect Integration"
-  ↓
-Redirect to OAuth provider
-  ↓
-User grants permission
-  ↓
-Provider redirects to /api/integrations/callback
-  ↓
-Exchange code for tokens
-  ↓
-Encrypt tokens (AES-256-GCM)
-  ↓
-Store in database
-  ↓
-Return to user dashboard
-```
-
-## Security Architecture
-
-### Defense in Depth
-
-**Layer 1: Network**
-- HTTPS everywhere
-- Webhook signature verification
-- Rate limiting per IP
-
-**Layer 2: Authentication**
-- Supabase Auth (JWT)
-- Session management
-- MFA support
-
-**Layer 3: Authorization**
-- Row-Level Security (RLS)
-- Organization-based access
-- Role-based permissions
-
-**Layer 4: Data**
-- Encryption at rest (credentials)
-- Encryption in transit (TLS)
-- Regular key rotation
-
-**Layer 5: Audit**
-- All actions logged
-- Immutable audit trail
-- Compliance reporting
-
-## Performance Targets
-
-### Latency
-- API response: < 200ms (p95)
-- Workflow execution: < 5s (simple)
-- Dashboard load: < 1s
-
-### Throughput
-- API requests: 10,000 req/s
-- Workflow executions: 100,000 jobs/hour
-- Concurrent workers: 500+
-
-### Reliability
-- Uptime: 99.9%
-- Data durability: 99.999999999%
-- Recovery time: < 1 hour
-
-## Future Enhancements
-
-### Phase 2
-- GraphQL API
-- Real-time execution streaming (WebSockets)
-- Workflow versioning
-- A/B testing workflows
-- Conditional branching
-
-### Phase 3
-- Multi-region deployment
-- Workflow marketplace
-- Custom code execution (sandboxed)
-- Advanced error recovery
-- Machine learning for optimization
-
-### Phase 4
-- Self-hosted option
-- Enterprise features (SSO, SAML)
-- Advanced analytics
-- Compliance certifications (SOC 2, HIPAA)
-- White-label support
+**This architecture allows Company X to offer Slack/Notion/etc integrations to their users WITHOUT building each integration themselves!**
 
