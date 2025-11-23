@@ -1,0 +1,174 @@
+# Integration Platform Development Rules
+
+## Project Context
+This is a SaaS integration platform (similar to Zapier/Workato) built with Next.js, designed to handle 1000+ integrations and millions of workflow executions.
+
+## Architecture Principles
+1. **Modularity**: Each integration is a self-contained plugin
+2. **Scalability**: Design for horizontal scaling from day one
+3. **Type Safety**: Full TypeScript with strict mode
+4. **Observability**: Log everything, trace all executions
+5. **Security First**: Encrypt credentials, validate all inputs
+
+## Code Style
+- Use TypeScript strict mode
+- Prefer functional patterns over classes (except integrations)
+- Use async/await over promises
+- Document complex logic with comments
+- Export types alongside implementation
+
+## File Organization
+- Group by feature, not by type
+- Keep files under 500 lines
+- Colocate tests with implementation
+- Use barrel exports (index.ts)
+
+## Naming Conventions
+- Components: PascalCase (e.g., `WorkflowBuilder`)
+- Functions: camelCase (e.g., `executeWorkflow`)
+- Constants: UPPER_SNAKE_CASE (e.g., `MAX_RETRIES`)
+- Files: kebab-case (e.g., `field-mapper.ts`)
+- Database: snake_case (e.g., `workflow_executions`)
+
+## Integration Development
+When creating a new integration:
+1. Copy template from existing integration
+2. Define metadata with correct category
+3. Implement at least one action
+4. Add input/output schemas with Zod
+5. Include error handling
+6. Add to registry auto-loader
+7. Document in README
+
+## Workflow Engine
+- Always validate workflow before execution
+- Log every step with input/output
+- Handle retries with exponential backoff
+- Never throw unhandled errors
+- Update execution status atomically
+
+## Database
+- Use transactions for multi-step operations
+- Add indexes for all foreign keys
+- Partition large tables by date
+- Use RLS for multi-tenant isolation
+- Never store credentials unencrypted
+
+## API Routes
+- Validate all inputs with Zod
+- Return consistent error format
+- Include request ID in responses
+- Log all API calls
+- Rate limit by organization
+
+## Testing
+- Unit tests for pure functions
+- Integration tests for services
+- E2E tests for critical workflows
+- Mock external APIs
+- Test error scenarios
+
+## Error Handling
+```typescript
+try {
+  // risky operation
+} catch (error) {
+  logger.error('Context about what failed', error);
+  // Return structured error, don't throw
+  return { success: false, error: { ... } };
+}
+```
+
+## Logging
+```typescript
+logger.info('What happened', { context });
+logger.warn('Potential issue', { details });
+logger.error('Failed operation', { error, context });
+```
+
+## Security
+- Never log sensitive data (tokens, passwords)
+- Validate webhook signatures
+- Use parameterized queries
+- Rate limit per user/org
+- Rotate encryption keys regularly
+
+## Performance
+- Cache integration metadata
+- Use connection pooling
+- Batch database operations
+- Lazy load integrations
+- Index frequently queried fields
+
+## Deployment
+- Always run migrations before deploy
+- Test in staging first
+- Monitor error rates post-deploy
+- Have rollback plan ready
+- Update documentation
+
+## Documentation
+- Keep README updated
+- Document breaking changes
+- Add JSDoc for public APIs
+- Include examples in docs
+- Update CHANGELOG
+
+## Common Patterns
+
+### Creating a Service
+```typescript
+export class MyService {
+  async doSomething(input: Input): Promise<Result> {
+    // Implementation
+  }
+}
+
+export const myService = new MyService();
+```
+
+### Creating an API Route
+```typescript
+export async function POST(request: NextRequest) {
+  const schema = z.object({ ... });
+  const data = schema.parse(await request.json());
+  // Handle request
+  return NextResponse.json({ ... });
+}
+```
+
+### Creating an Integration
+```typescript
+const myIntegration: Integration = {
+  metadata: { ... },
+  auth: { ... },
+  actions: { ... },
+  triggers: { ... }
+};
+
+export default myIntegration;
+```
+
+## Don'ts
+- Don't use `any` type without comment
+- Don't commit secrets to git
+- Don't skip error handling
+- Don't bypass RLS policies
+- Don't block the event loop
+- Don't create circular dependencies
+- Don't use synchronous I/O
+
+## Git Workflow
+- Branch: feature/*, fix/*, docs/*
+- Commits: Conventional commits
+- PR: Require review
+- Squash before merge
+- Keep history clean
+
+## When in Doubt
+1. Check existing patterns in codebase
+2. Refer to architecture docs
+3. Ask for review
+4. Keep it simple
+5. Document your decision
+

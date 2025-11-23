@@ -1,0 +1,379 @@
+// Prisma Schema for Integration Platform
+// Optimized for multi-tenancy, scalability, and millions of workflow executions
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// CORE MODELS - Users & Organizations
+// ============================================
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  tier      String   @default("free") // free, pro, enterprise
+  settings  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users            User[]
+  connections      Connection[]
+  workflows        Workflow[]
+  executions       WorkflowExecution[]
+  usageMetrics     UsageMetric[]
+  auditLogs        AuditLog[]
+  aiMappings       AiGeneratedMapping[]
+
+  @@index([slug])
+  @@map("organizations")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String?
+  avatarUrl      String?
+  role           String   @default("member") // owner, admin, member
+  organizationId String
+  supabaseId     String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([organizationId])
+  @@index([supabaseId])
+  @@map("users")
+}
+
+// ============================================
+// INTEGRATIONS & CONNECTIONS
+// ============================================
+
+model Integration {
+  id          String   @id @default(cuid())
+  slug        String   @unique // google_sheets, notion, slack
+  name        String
+  description String?
+  category    String   // productivity, crm, database, communication
+  iconUrl     String?
+  version     String   @default("1.0.0")
+  status      String   @default("active") // active, deprecated, beta
+  authType    String   // oauth2, api_key, basic, custom
+  
+  // Metadata
+  metadata    Json?    // Includes rate limits, API docs, etc.
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  connections Connection[]
+  
+  @@index([slug])
+  @@index([category])
+  @@index([status])
+  @@map("integrations")
+}
+
+model Connection {
+  id             String   @id @default(cuid())
+  organizationId String
+  integrationId  String
+  name           String   // User-friendly name
+  
+  // Auth data (encrypted)
+  credentials    Json     // Stores encrypted tokens, API keys
+  
+  // OAuth specific
+  accessToken    String?  @db.Text
+  refreshToken   String?  @db.Text
+  expiresAt      DateTime?
+  
+  // Scopes & permissions
+  scopes         String[]
+  
+  // Status
+  status         String   @default("active") // active, expired, revoked
+  lastUsedAt     DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  integration    Integration  @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  
+  @@index([organizationId])
+  @@index([integrationId])
+  @@index([status])
+  @@map("connections")
+}
+
+// ============================================
+// WORKFLOWS
+// ============================================
+
+model Workflow {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  
+  // Workflow Definition (JSON DSL)
+  definition     Json     // Contains trigger, steps, mappings, retry logic
+  
+  // Status
+  status         String   @default("draft") // draft, active, paused, archived
+  version        Int      @default(1)
+  
+  // Trigger configuration
+  triggerType    String   // webhook, schedule, manual, event
+  triggerConfig  Json?
+  
+  // Settings
+  settings       Json?    // Rate limits, timeouts, etc.
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lastRunAt      DateTime?
+
+  organization   Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  executions     WorkflowExecution[]
+  
+  @@index([organizationId])
+  @@index([status])
+  @@index([triggerType])
+  @@map("workflows")
+}
+
+// ============================================
+// WORKFLOW EXECUTIONS & LOGS
+// ============================================
+
+model WorkflowExecution {
+  id             String   @id @default(cuid())
+  workflowId     String
+  organizationId String
+  
+  // Execution metadata
+  status         String   // pending, running, success, failed, cancelled
+  triggerSource  String?  // webhook, manual, schedule
+  
+  // Input/Output
+  inputPayload   Json?
+  outputPayload  Json?
+  
+  // Timing
+  startedAt      DateTime @default(now())
+  finishedAt     DateTime?
+  duration       Int?     // in milliseconds
+  
+  // Error handling
+  error          Json?
+  retryCount     Int      @default(0)
+  maxRetries     Int      @default(3)
+  
+  createdAt      DateTime @default(now())
+
+  workflow       Workflow   @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stepLogs       WorkflowStepLog[]
+  
+  @@index([workflowId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([startedAt])
+  @@map("workflow_executions")
+}
+
+model WorkflowStepLog {
+  id          String   @id @default(cuid())
+  executionId String
+  
+  // Step identification
+  stepNumber  Int
+  stepName    String
+  integration String
+  action      String
+  
+  // Status
+  status      String   // pending, running, success, failed, skipped
+  
+  // Data
+  input       Json?
+  output      Json?
+  error       Json?
+  
+  // Timing
+  startedAt   DateTime @default(now())
+  finishedAt  DateTime?
+  duration    Int?     // in milliseconds
+  
+  // Retry
+  retryCount  Int      @default(0)
+  
+  execution   WorkflowExecution @relation(fields: [executionId], references: [id], onDelete: Cascade)
+  
+  @@index([executionId])
+  @@index([status])
+  @@map("workflow_step_logs")
+}
+
+// ============================================
+// AI-ASSISTED FEATURES
+// ============================================
+
+model AiGeneratedMapping {
+  id             String   @id @default(cuid())
+  organizationId String
+  
+  // Source/Target
+  sourceSchema   Json
+  targetSchema   Json
+  
+  // AI Generated mapping
+  mapping        Json
+  confidence     Float?
+  
+  // User feedback
+  accepted       Boolean  @default(false)
+  userModified   Boolean  @default(false)
+  
+  // Model used
+  model          String   // gpt-4, claude-3, etc.
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([organizationId])
+  @@map("ai_generated_mappings")
+}
+
+// ============================================
+// USAGE & METRICS
+// ============================================
+
+model UsageMetric {
+  id             String   @id @default(cuid())
+  organizationId String
+  
+  // Metrics
+  metricType     String   // execution_count, api_calls, data_transferred
+  value          Int
+  
+  // Dimensions
+  workflowId     String?
+  integrationId  String?
+  
+  // Time
+  periodStart    DateTime
+  periodEnd      DateTime
+  
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([organizationId])
+  @@index([metricType])
+  @@index([periodStart])
+  @@map("usage_metrics")
+}
+
+// ============================================
+// AUDIT & SECURITY
+// ============================================
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String?
+  
+  // Action details
+  action         String   // workflow_created, connection_added, etc.
+  resource       String   // workflow, connection, integration
+  resourceId     String?
+  
+  // Changes
+  changes        Json?
+  
+  // Request metadata
+  ipAddress      String?
+  userAgent      String?
+  
+  createdAt      DateTime @default(now())
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([organizationId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================
+// ERROR TRACKING
+// ============================================
+
+model ErrorReport {
+  id             String   @id @default(cuid())
+  
+  // Error details
+  errorType      String
+  errorMessage   String   @db.Text
+  errorStack     String?  @db.Text
+  
+  // Context
+  workflowId     String?
+  executionId    String?
+  integrationId  String?
+  
+  // Additional data
+  metadata       Json?
+  
+  // Status
+  status         String   @default("open") // open, investigating, resolved
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([errorType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("error_reports")
+}
+
+// ============================================
+// WEBHOOK ENDPOINTS
+// ============================================
+
+model WebhookEndpoint {
+  id             String   @id @default(cuid())
+  workflowId     String
+  
+  // Endpoint details
+  url            String   @unique
+  secret         String   // For signature verification
+  
+  // Status
+  status         String   @default("active")
+  
+  // Stats
+  requestCount   Int      @default(0)
+  lastReceivedAt DateTime?
+  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([workflowId])
+  @@index([status])
+  @@map("webhook_endpoints")
+}
+

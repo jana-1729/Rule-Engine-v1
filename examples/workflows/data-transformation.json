@@ -1,0 +1,94 @@
+{
+  "name": "Complex Data Transformation",
+  "description": "Example of advanced field mappings with transformations",
+  "version": "1.0.0",
+  "trigger": {
+    "integration": "webhook",
+    "trigger": "http_request",
+    "config": {
+      "method": "POST",
+      "path": "/webhook/transform-data"
+    },
+    "connectionId": "INTERNAL"
+  },
+  "steps": [
+    {
+      "id": "step-1",
+      "name": "Transform User Data",
+      "integration": "internal",
+      "action": "transform",
+      "connectionId": "INTERNAL",
+      "input": {
+        "mappings": [
+          {
+            "source": "$.user.firstName",
+            "target": "$.fullName",
+            "transform": {
+              "type": "template",
+              "config": {
+                "template": "{{$.user.firstName}} {{$.user.lastName}}"
+              }
+            }
+          },
+          {
+            "source": "$.user.email",
+            "target": "$.email",
+            "transform": {
+              "type": "to-lowercase"
+            }
+          },
+          {
+            "source": "$.user.createdAt",
+            "target": "$.memberSince",
+            "transform": {
+              "type": "format-date",
+              "config": {
+                "format": "YYYY-MM-DD"
+              }
+            }
+          },
+          {
+            "source": "$.user.status",
+            "target": "$.isActive",
+            "transform": {
+              "type": "conditional",
+              "config": {
+                "condition": {
+                  "operator": "equals",
+                  "compareValue": "active"
+                },
+                "ifTrue": true,
+                "ifFalse": false
+              }
+            }
+          },
+          {
+            "source": "$.user.tags",
+            "target": "$.tagString",
+            "transform": {
+              "type": "join",
+              "config": {
+                "delimiter": ", "
+              }
+            }
+          },
+          {
+            "source": "$.user.bio",
+            "target": "$.shortBio",
+            "transform": {
+              "type": "function",
+              "config": {
+                "code": "return value.substring(0, 100) + '...';"
+              }
+            }
+          }
+        ],
+        "static": {
+          "source": "api_import",
+          "version": "1.0"
+        }
+      }
+    }
+  ]
+}
+

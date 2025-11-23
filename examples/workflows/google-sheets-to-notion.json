@@ -1,0 +1,59 @@
+{
+  "name": "Google Sheets to Notion Sync",
+  "description": "Automatically create Notion pages when new rows are added to Google Sheets",
+  "version": "1.0.0",
+  "trigger": {
+    "integration": "google_sheets",
+    "trigger": "new_row",
+    "config": {
+      "spreadsheetId": "YOUR_SPREADSHEET_ID",
+      "sheetName": "Sheet1",
+      "pollInterval": 60
+    },
+    "connectionId": "CONNECTION_ID_HERE"
+  },
+  "steps": [
+    {
+      "id": "step-1",
+      "name": "Create Notion Page",
+      "integration": "notion",
+      "action": "create_page",
+      "connectionId": "CONNECTION_ID_HERE",
+      "input": {
+        "mappings": [
+          {
+            "source": "$.row[0]",
+            "target": "$.properties.Name.title[0].text.content"
+          },
+          {
+            "source": "$.row[1]",
+            "target": "$.properties.Email.email"
+          },
+          {
+            "source": "$.row[2]",
+            "target": "$.properties.Status.select.name"
+          }
+        ],
+        "static": {
+          "parent": {
+            "type": "database_id",
+            "id": "YOUR_NOTION_DATABASE_ID"
+          }
+        }
+      },
+      "retry": {
+        "maxAttempts": 3,
+        "delay": "exponential",
+        "backoffMultiplier": 2
+      }
+    }
+  ],
+  "settings": {
+    "timeout": 30000,
+    "errorHandling": {
+      "strategy": "retry",
+      "notifyOn": ["error"]
+    }
+  }
+}
+
