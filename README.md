@@ -26,6 +26,14 @@ Your platform now includes a full-featured admin dashboard with:
 
 ---
 
+## ⚡ **FIRST TIME SETUP?**
+
+**👉 Read [`START_HERE.md`](./START_HERE.md) for complete database setup!**
+
+Already set up? Jump to [Quick Start](#-quick-start)
+
+---
+
 ## 📖 Table of Contents
 
 - [What Problem Does This Solve?](#-what-problem-does-this-solve)

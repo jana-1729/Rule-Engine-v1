@@ -18,13 +18,9 @@ export default async function AppsPage() {
     include: {
       _count: {
         select: {
-          endUserConnections: true,
+          connections: true,
           executions: true,
         },
-      },
-      apiKeyVersions: {
-        where: { status: 'active' },
-        take: 1,
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -63,10 +59,10 @@ export default async function AppsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-2xl font-bold text-gray-900">
-                    {app._count.endUserConnections}
+                    {app._count.connections}
                   </div>
                   <div className="text-sm text-gray-600">Connections</div>
                 </div>
@@ -75,12 +71,6 @@ export default async function AppsPage() {
                     {app._count.executions}
                   </div>
                   <div className="text-sm text-gray-600">Executions</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {app.apiKeyVersions.length}
-                  </div>
-                  <div className="text-sm text-gray-600">Active API Keys</div>
                 </div>
               </div>
 

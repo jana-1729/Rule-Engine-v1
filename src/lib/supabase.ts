@@ -1,19 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
+// Legacy exports - kept for backward compatibility
+// Use the new implementations in ./supabase/server.ts and ./supabase/client.ts instead
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+import { createBrowserClient } from '@supabase/ssr';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Server-side client with service role
-export const supabaseAdmin = createClient(
-  supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
+// Client-side instance (for browser/client components)
+export const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// For server components, import from './supabase/server'
+// For client components, import from './supabase/client'

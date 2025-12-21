@@ -15,17 +15,27 @@ export default async function DashboardPage() {
   // Fetch stats
   const [apps, executions, integrations, recentExecutions] = await Promise.all([
     prisma.app.count({ where: { accountId: session.accountId } }),
-    prisma.execution.count({ where: { accountId: session.accountId } }),
+    prisma.execution.count({ 
+      where: { 
+        app: {
+          accountId: session.accountId
+        }
+      } 
+    }),
     prisma.app.findMany({
       where: { accountId: session.accountId },
       include: {
         _count: {
-          select: { endUserConnections: true },
+          select: { connections: true },
         },
       },
     }),
     prisma.execution.findMany({
-      where: { accountId: session.accountId },
+      where: { 
+        app: {
+          accountId: session.accountId
+        }
+      },
       orderBy: { startedAt: 'desc' },
       take: 10,
       include: {
@@ -36,7 +46,7 @@ export default async function DashboardPage() {
   ]);
 
   const totalConnections = integrations.reduce(
-    (sum, app) => sum + app._count.endUserConnections,
+    (sum, app) => sum + app._count.connections,
     0
   );
 
@@ -44,7 +54,9 @@ export default async function DashboardPage() {
     ? await prisma.execution
         .count({
           where: {
-            accountId: session.accountId,
+            app: {
+              accountId: session.accountId
+            },
             status: 'success',
           },
         })

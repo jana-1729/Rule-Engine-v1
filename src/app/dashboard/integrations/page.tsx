@@ -9,18 +9,9 @@ export default async function IntegrationsPage() {
     return null;
   }
 
-  // Fetch all integrations and check which ones are enabled for this account
+  // Fetch all integrations (actions and triggers are JSON fields, not relations)
   const integrations = await prisma.integration.findMany({
-    where: { status: 'active' },
-    include: {
-      authMethods: true,
-      actions: {
-        where: { status: 'active' },
-      },
-      triggers: {
-        where: { status: 'active' },
-      },
-    },
+    where: { status: 'available' },
     orderBy: { name: 'asc' },
   });
 
@@ -28,7 +19,7 @@ export default async function IntegrationsPage() {
   const apps = await prisma.app.findMany({
     where: { accountId: session.accountId },
     include: {
-      endUserConnections: {
+      connections: {
         include: {
           integration: true,
         },
@@ -39,7 +30,7 @@ export default async function IntegrationsPage() {
   // Group connections by integration
   const connectionsByIntegration = new Map<string, number>();
   apps.forEach((app) => {
-    app.endUserConnections.forEach((conn) => {
+    app.connections.forEach((conn) => {
       const count = connectionsByIntegration.get(conn.integrationId) || 0;
       connectionsByIntegration.set(conn.integrationId, count + 1);
     });

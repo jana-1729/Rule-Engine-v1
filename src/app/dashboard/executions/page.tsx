@@ -17,7 +17,9 @@ export default async function ExecutionsPage({
 
   // Build filters
   const where: any = {
-    accountId: session.accountId,
+    app: {
+      accountId: session.accountId,
+    },
   };
 
   if (searchParams.status && searchParams.status !== 'all') {
@@ -55,16 +57,17 @@ export default async function ExecutionsPage({
   ]);
 
   // Calculate stats
+  const accountWhere = { app: { accountId: session.accountId } };
   const stats = {
-    total: await prisma.execution.count({ where: { accountId: session.accountId } }),
+    total: await prisma.execution.count({ where: accountWhere }),
     success: await prisma.execution.count({
-      where: { accountId: session.accountId, status: 'success' },
+      where: { ...accountWhere, status: 'success' },
     }),
     failure: await prisma.execution.count({
-      where: { accountId: session.accountId, status: 'failure' },
+      where: { ...accountWhere, status: 'failure' },
     }),
     pending: await prisma.execution.count({
-      where: { accountId: session.accountId, status: 'pending' },
+      where: { ...accountWhere, status: 'pending' },
     }),
   };
 
