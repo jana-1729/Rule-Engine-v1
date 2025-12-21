@@ -54,7 +54,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900">Rule Engine</h1>
-          <p className="text-sm text-gray-600 mt-1">Integration Platform</p>
+          <p className="text-sm text-gray-600 mt-1">Rule Engine</p>
         </div>
 
         <Card className="border-0 shadow-xl">

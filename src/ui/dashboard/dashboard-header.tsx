@@ -23,10 +23,10 @@ export function DashboardHeader({ session }: DashboardHeaderProps) {
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
       <div className="px-6 lg:px-8 py-3 flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <img src="/logo.png" alt="Integration Platform" className="w-9 h-9" />
+          <img src="/logo.png" alt="Rule Engine" className="w-9 h-9" />
           <div>
             <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Integration Platform
+              Rule Engine
             </h1>
           </div>
         </div>

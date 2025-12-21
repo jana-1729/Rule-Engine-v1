@@ -1,4 +1,4 @@
-# B2B2C Embedded Integration Platform Architecture
+# B2B2C Embedded Rule Engine Architecture
 
 ## Overview
 

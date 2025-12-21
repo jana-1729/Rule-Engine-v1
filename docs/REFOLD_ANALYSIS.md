@@ -2,13 +2,13 @@
 
 > **Date**: December 21, 2025  
 > **Source**: https://www.refold.ai/  
-> **Category**: Enterprise Integration Platform with AI Agents
+> **Category**: Enterprise Rule Engine with AI Agents
 
 ---
 
 ## 🏢 Company Overview
 
-**Refold.ai** is an AI-powered integration platform that positions itself as "AI Agents Purpose-Built for Enterprise-Grade Integrations."
+**Refold.ai** is an AI-powered Rule Engine that positions itself as "AI Agents Purpose-Built for Enterprise-Grade Integrations."
 
 ### Target Market
 - **Primary**: B2B SaaS companies selling to enterprises

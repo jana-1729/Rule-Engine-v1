@@ -1,10 +1,10 @@
 # Customer Integration Guide
 
 <p align="center">
-  <img src="rule-engine.png" alt="Integration Platform" width="200"/>
+  <img src="rule-engine.png" alt="Rule Engine" width="200"/>
 </p>
 
-> Complete guide for integrating our B2B2C Integration Platform into your application
+> Complete guide for integrating our B2B2C Rule Engine into your application
 
 ---
 

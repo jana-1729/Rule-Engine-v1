@@ -9,12 +9,12 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'Integration Platform API',
+      title: 'Rule Engine API',
       version: '1.0.0',
       description: `
-# Integration Platform API
+# Rule Engine API
 
-A comprehensive B2B2C embedded integration platform API that enables your applications to connect with 100+ third-party services.
+A comprehensive B2B2C embedded Rule Engine API that enables your applications to connect with 100+ third-party services.
 
 ## Features
 

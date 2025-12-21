@@ -338,10 +338,10 @@ export class EmailService {
   async sendTestEmail(to: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
     return this.sendEmail({
       to,
-      subject: 'Test Email from Integration Platform',
+      subject: 'Test Email from Rule Engine',
       html: `
         <h1>Test Email</h1>
-        <p>This is a test email from your integration platform.</p>
+        <p>This is a test email from your Rule Engine.</p>
         <p>If you received this, your email configuration is working correctly!</p>
         <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
       `,

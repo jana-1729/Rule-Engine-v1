@@ -1,4 +1,4 @@
-# API Reference - Embedded Integration Platform
+# API Reference - Embedded Rule Engine
 
 Base URL: `https://your-platform.com/api/v1`
 

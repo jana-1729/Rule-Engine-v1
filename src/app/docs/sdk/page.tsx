@@ -6,7 +6,7 @@ export default function SDKDocsPage() {
         <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold mb-2">SDK Documentation</h1>
           <p className="text-purple-100 text-lg">
-            Official SDKs and code examples for the Integration Platform
+            Official SDKs and code examples for the Rule Engine
           </p>
         </div>
       </div>
@@ -36,7 +36,7 @@ export default function SDKDocsPage() {
         <section className="bg-white rounded-lg shadow-sm p-8 mb-8">
           <h2 className="text-2xl font-bold mb-4">Quick Start</h2>
           <p className="text-gray-600 mb-6">
-            Get started with the Integration Platform in minutes using our official SDKs.
+            Get started with the Rule Engine in minutes using our official SDKs.
           </p>
 
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
@@ -339,7 +339,7 @@ console.log('Duration:', execution.duration, 'ms');`}</code>
         <section className="bg-white rounded-lg shadow-sm p-8 mb-8">
           <h2 className="text-2xl font-bold mb-4">Webhooks</h2>
           <p className="text-gray-600 mb-4">
-            Receive real-time notifications about events in your integration platform.
+            Receive real-time notifications about events in your Rule Engine.
           </p>
 
           <h3 className="text-lg font-semibold mb-3">Setup</h3>

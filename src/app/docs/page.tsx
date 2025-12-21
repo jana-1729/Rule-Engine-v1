@@ -24,7 +24,7 @@ export default function APIDocsPage() {
         <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold mb-2">API Documentation</h1>
           <p className="text-blue-100 text-lg">
-            Complete reference for the Integration Platform API
+            Complete reference for the Rule Engine API
           </p>
         </div>
       </div>
@@ -81,7 +81,7 @@ export default function APIDocsPage() {
             </a>
           </p>
           <p className="text-sm">
-            © 2025 Integration Platform. All rights reserved.
+            © 2025 Rule Engine. All rights reserved.
           </p>
         </div>
       </div>

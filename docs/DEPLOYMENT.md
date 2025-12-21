@@ -1,6 +1,6 @@
-# Deployment Guide - B2B2C Integration Platform
+# Deployment Guide - B2B2C Rule Engine
 
-Complete guide to deploying your embedded integration platform to production.
+Complete guide to deploying your embedded Rule Engine to production.
 
 ---
 
