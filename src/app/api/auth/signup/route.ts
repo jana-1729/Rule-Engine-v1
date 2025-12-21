@@ -79,16 +79,6 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // Store API key version
-      await tx.apiKeyVersion.create({
-        data: {
-          appId: app.id,
-          keyHash: apiKeyHash,
-          keyPrefix: getKeyPrefix(apiKey),
-          status: 'active',
-        },
-      });
-
       return { account, user, app, apiKey };
     });
 

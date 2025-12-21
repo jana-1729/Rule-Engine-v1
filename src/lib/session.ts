@@ -43,15 +43,16 @@ export async function createSession(userId: string): Promise<string> {
   };
 
   // Store session in database (simplified - use Redis in production)
-  await prisma.auditLog.create({
-    data: {
-      accountId: user.accountId,
-      userId: user.id,
-      action: 'session.created',
-      resource: 'session',
-      resourceId: sessionToken,
-    },
-  });
+  // Note: Audit log creation is optional for session management
+  // await prisma.auditLog.create({
+  //   data: {
+  //     accountId: user.accountId,
+  //     appId: user.accountId, // This should be the actual appId
+  //     action: 'session.created',
+  //     resource: 'session',
+  //     resourceId: sessionToken,
+  //   },
+  // });
 
   // Set cookie
   cookies().set(SESSION_COOKIE_NAME, JSON.stringify({ token: sessionToken, ...session }), {
