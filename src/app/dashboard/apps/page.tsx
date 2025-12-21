@@ -74,18 +74,21 @@ export default async function AppsPage() {
                 </div>
               </div>
 
-              {/* API Key */}
+              {/* API Key Preview */}
               <div className="border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-700">API Key</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      Use this key to authenticate API requests
-                    </div>
+                    <Link href={`/dashboard/apps/${app.id}`}>
+                      <Button variant="outline" size="sm">View & Manage</Button>
+                    </Link>
                   </div>
-                  <Link href={`/dashboard/apps/${app.id}`}>
-                    <Button variant="outline">Manage</Button>
-                  </Link>
+                  <code className="block px-3 py-2 bg-gray-100 rounded text-xs font-mono text-gray-600">
+                    app_••••••••••••••••••••••••••••••••
+                  </code>
+                  <div className="text-xs text-gray-500">
+                    Click "View & Manage" to see full details and regenerate
+                  </div>
                 </div>
               </div>
 

@@ -1,46 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/session';
+import { prisma } from '@/lib/prisma';
+import { getSession } from '@/lib/session';
 import { z } from 'zod';
 
-// This is a placeholder for workflow management
-// In production, you'd store workflows in a dedicated table
-
-const workflowSchema = z.object({
+const createWorkflowSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  nodes: z.array(z.any()),
-  edges: z.array(z.any()),
-  enabled: z.boolean().default(true),
+  appId: z.string(),
+  integrationId: z.string(),
+  definition: z.object({
+    version: z.string(),
+    action: z.string(),
+    fieldMappings: z.record(z.any()),
+    conditions: z.array(z.any()).optional(),
+  }),
+  enabled: z.boolean().default(false),
 });
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireAuth();
-    const body = await request.json();
-    const workflow = workflowSchema.parse(body);
+    const session = await getSession();
 
-    // TODO: Store workflow in database
-    // For now, just acknowledge receipt
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const data = createWorkflowSchema.parse(body);
+
+    // Verify app belongs to this account
+    const app = await prisma.app.findFirst({
+      where: {
+        id: data.appId,
+        accountId: session.accountId,
+      },
+    });
+
+    if (!app) {
+      return NextResponse.json(
+        { error: 'App not found or unauthorized' },
+        { status: 404 }
+      );
+    }
+
+    // Create workflow
+    const workflow = await prisma.workflow.create({
+      data: {
+        appId: data.appId,
+        integrationId: data.integrationId,
+        name: data.name,
+        description: data.description,
+        definition: data.definition,
+        enabled: data.enabled,
+      },
+      include: {
+        integration: true,
+        app: true,
+      },
+    });
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Workflow created successfully',
-        workflow: {
-          id: `wf_${Date.now()}`,
-          ...workflow,
-          accountId: session.accountId,
-          createdAt: new Date(),
-        },
+        workflow,
       },
       { status: 201 }
     );
   } catch (error: any) {
     console.error('Workflow creation error:', error);
-
-    if (error.message === 'Unauthorized') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
@@ -58,26 +85,38 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await requireAuth();
+    const session = await getSession();
 
-    // TODO: Fetch workflows from database
-    // For now, return empty array
-
-    return NextResponse.json({
-      success: true,
-      workflows: [],
-    });
-  } catch (error: any) {
-    console.error('Workflow fetch error:', error);
-
-    if (error.message === 'Unauthorized') {
+    if (!session) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const workflows = await prisma.workflow.findMany({
+      where: {
+        app: {
+          accountId: session.accountId,
+        },
+      },
+      include: {
+        integration: true,
+        app: true,
+        _count: {
+          select: {
+            executions: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json({
+      workflows,
+    });
+  } catch (error) {
+    console.error('Failed to fetch workflows:', error);
     return NextResponse.json(
       { error: 'Failed to fetch workflows' },
       { status: 500 }
     );
   }
 }
-

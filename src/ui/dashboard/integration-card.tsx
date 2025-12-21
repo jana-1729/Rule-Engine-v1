@@ -10,25 +10,22 @@ interface IntegrationCardProps {
   connections: number;
 }
 
-const integrationIcons: Record<string, string> = {
-  slack: '💬',
-  notion: '📝',
-  'google-sheets': '📊',
-  hubspot: '🎯',
-  salesforce: '☁️',
-  default: '🔌',
-};
-
 export function IntegrationCard({ integration, connections }: IntegrationCardProps) {
-  const icon = integrationIcons[integration.slug] || integrationIcons.default;
-
   return (
     <Card className="group hover:shadow-xl transition-all duration-300 border-0 shadow-md hover:-translate-y-1">
       <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-500 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-              <span className="text-2xl">{icon}</span>
+            <div className="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow overflow-hidden">
+              {integration.logo ? (
+                <img 
+                  src={integration.logo} 
+                  alt={integration.name}
+                  className="w-full h-full object-contain p-1"
+                />
+              ) : (
+                <span className="text-2xl">🔌</span>
+              )}
             </div>
             <div>
               <CardTitle className="text-lg font-semibold">{integration.name}</CardTitle>

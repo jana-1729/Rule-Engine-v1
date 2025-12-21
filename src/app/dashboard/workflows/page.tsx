@@ -12,9 +12,24 @@ export default async function WorkflowsPage() {
     return null;
   }
 
-  // Fetch workflows (stored as JSON in database or separate table)
-  // For now, we'll use a simple structure
-  const workflows: any[] = []; // TODO: Add workflow table
+  // Fetch workflows from database
+  const workflows = await prisma.workflow.findMany({
+    where: {
+      app: {
+        accountId: session.accountId,
+      },
+    },
+    include: {
+      integration: true,
+      app: true,
+      _count: {
+        select: {
+          executions: true,
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
 
   return (
     <div className="space-y-8">
@@ -53,24 +68,49 @@ export default async function WorkflowsPage() {
             <Card key={workflow.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>{workflow.name}</CardTitle>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <CardTitle>{workflow.name}</CardTitle>
+                      <Badge variant={workflow.enabled ? 'default' : 'secondary'}>
+                        {workflow.enabled ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </div>
                     <p className="text-sm text-gray-600 mt-1">
-                      {workflow.description}
+                      {workflow.description || 'No description'}
                     </p>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="flex items-center gap-2">
+                        {workflow.integration.logo && (
+                          <img 
+                            src={workflow.integration.logo} 
+                            alt={workflow.integration.name}
+                            className="w-4 h-4 object-contain"
+                          />
+                        )}
+                        <span className="text-xs text-gray-500">
+                          Integration: <span className="font-medium text-gray-700">{workflow.integration.name}</span>
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        App: <span className="font-medium text-gray-700">{workflow.app.name}</span>
+                      </span>
+                    </div>
                   </div>
-                  <Badge variant={workflow.enabled ? 'default' : 'secondary'}>
-                    {workflow.enabled ? 'Active' : 'Inactive'}
-                  </Badge>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-600">
-                    Last run: {workflow.lastRun ? new Date(workflow.lastRun).toLocaleString() : 'Never'}
+                  <div className="flex items-center gap-6">
+                    <div className="text-sm">
+                      <span className="text-gray-600">Executions:</span>{' '}
+                      <span className="font-semibold text-gray-900">{workflow._count.executions}</span>
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      Created: {new Date(workflow.createdAt).toLocaleDateString()}
+                    </div>
                   </div>
                   <Link href={`/dashboard/workflows/${workflow.id}`}>
-                    <Button variant="outline">Edit</Button>
+                    <Button variant="outline">View & Edit</Button>
                   </Link>
                 </div>
               </CardContent>

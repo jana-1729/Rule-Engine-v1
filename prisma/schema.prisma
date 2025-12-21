@@ -106,6 +106,8 @@ model App {
   endUsers        EndUser[]
   connections     EndUserConnection[]
   executions      Execution[]
+  workflows       Workflow[]
+  oauthStates     OAuthState[]
   enabledIntegrations AppIntegration[]
   
   @@index([accountId])
@@ -165,6 +167,7 @@ model EndUser {
   app             App                 @relation(fields: [appId], references: [id], onDelete: Cascade)
   connections     EndUserConnection[]
   executions      Execution[]
+  oauthStates     OAuthState[]
   
   @@unique([appId, externalId])
   @@index([appId])
@@ -210,6 +213,8 @@ model Integration {
   // Relations
   connections EndUserConnection[]
   executions  Execution[]
+  workflows   Workflow[]
+  oauthStates OAuthState[]
   appIntegrations AppIntegration[]
   
   @@index([slug])
@@ -227,21 +232,17 @@ model EndUserConnection {
   endUserId     String
   integrationId String
   
-  // Connection name (user-friendly)
-  name          String   // "My Slack Workspace"
-  
-  // Encrypted credentials
-  credentials   Json     // { accessToken, refreshToken, etc. }
-  encryptedData String?  @db.Text // Encrypted sensitive data
+  // OAuth tokens (encrypted)
+  accessToken   String   @db.Text
+  refreshToken  String?  @db.Text
   
   // OAuth metadata
-  scopes        String[]
+  scope         String?
   expiresAt     DateTime?
   
   // Status
   status        String   @default("active") // active, expired, revoked, error
   lastUsedAt    DateTime?
-  lastSyncedAt  DateTime?
   
   // Error tracking
   errorCount    Int      @default(0)
@@ -254,9 +255,7 @@ model EndUserConnection {
   app           App         @relation(fields: [appId], references: [id], onDelete: Cascade)
   endUser       EndUser     @relation(fields: [endUserId], references: [id], onDelete: Cascade)
   integration   Integration @relation(fields: [integrationId], references: [id])
-  executions    Execution[]
   
-  @@unique([appId, endUserId, integrationId])
   @@index([appId])
   @@index([endUserId])
   @@index([integrationId])
@@ -272,55 +271,42 @@ model Execution {
   id            String   @id @default(cuid())
   appId         String
   endUserId     String
-  connectionId  String
+  workflowId    String?
   integrationId String
   
   // What was executed
-  action        String   // e.g., "send_message", "create_page"
+  action        String?  // e.g., "send_message", "create_page"
   
   // Input/Output
   input         Json
   output        Json?
   
+  // Logs
+  logs          Json?    // Array of log entries
+  error         Json?    // Error details
+  
   // Timing
-  startedAt     DateTime @default(now())
-  finishedAt    DateTime?
-  duration      Int?     // milliseconds
+  createdAt     DateTime @default(now())
+  completedAt   DateTime?
   
   // Status
-  status        String   // success, failed, pending, timeout
-  
-  // Error details
-  errorCode     String?
-  errorMessage  String?  @db.Text
-  errorDetails  Json?
-  
-  // Retry tracking
-  retryCount    Int      @default(0)
-  maxRetries    Int      @default(3)
+  status        String   // success, failed, pending, running
   
   // Request metadata
   requestId     String   @unique @default(cuid())
-  ipAddress     String?
-  userAgent     String?
   
-  // Billing
-  billedAt      DateTime?
-  cost          Float?   // In credits/units
-  
-  createdAt     DateTime @default(now())
-
   // Relations
   app           App                 @relation(fields: [appId], references: [id], onDelete: Cascade)
   endUser       EndUser             @relation(fields: [endUserId], references: [id], onDelete: Cascade)
-  connection    EndUserConnection   @relation(fields: [connectionId], references: [id])
+  workflow      Workflow?           @relation(fields: [workflowId], references: [id])
   integration   Integration         @relation(fields: [integrationId], references: [id])
   
   @@index([appId])
   @@index([endUserId])
+  @@index([workflowId])
   @@index([integrationId])
   @@index([status])
-  @@index([startedAt])
+  @@index([createdAt])
   @@index([requestId])
   @@map("executions")
 }
@@ -415,6 +401,42 @@ model UsageMetric {
 }
 
 // ============================================
+// WORKFLOWS - Automation workflows
+// ============================================
+
+model Workflow {
+  id            String   @id @default(cuid())
+  appId         String
+  integrationId String
+  
+  // Workflow details
+  name          String
+  description   String?
+  
+  // Definition (JSON)
+  definition    Json     // Contains steps, field mappings, conditions
+  
+  // Status
+  enabled       Boolean  @default(true)
+  
+  // Metadata
+  metadata      Json?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  app           App         @relation(fields: [appId], references: [id], onDelete: Cascade)
+  integration   Integration @relation(fields: [integrationId], references: [id])
+  executions    Execution[]
+  
+  @@index([appId])
+  @@index([integrationId])
+  @@index([enabled])
+  @@map("workflows")
+}
+
+// ============================================
 // OAUTH STATES - For secure OAuth flows
 // ============================================
 
@@ -438,6 +460,11 @@ model OAuthState {
   usedAt        DateTime?
   
   createdAt     DateTime @default(now())
+  
+  // Relations
+  app           App         @relation(fields: [appId], references: [id], onDelete: Cascade)
+  endUser       EndUser     @relation(fields: [endUserId], references: [id], onDelete: Cascade)
+  integration   Integration @relation(fields: [integrationId], references: [id])
   
   @@index([state])
   @@index([expiresAt])

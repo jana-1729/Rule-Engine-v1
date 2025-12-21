@@ -38,7 +38,7 @@ export default async function ExecutionsPage({
   const [executions, integrations, apps] = await Promise.all([
     prisma.execution.findMany({
       where,
-      orderBy: { startedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: 100,
       include: {
         integration: true,
@@ -164,9 +164,17 @@ export default async function ExecutionsPage({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <span className="text-2xl">
-                          {execution.integration?.slug === 'slack' ? '💬' : '🔌'}
-                        </span>
+                        <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
+                          {execution.integration?.logo ? (
+                            <img 
+                              src={execution.integration.logo} 
+                              alt={execution.integration.name}
+                              className="w-full h-full object-contain p-1"
+                            />
+                          ) : (
+                            <span className="text-xl">🔌</span>
+                          )}
+                        </div>
                         <div>
                           <div className="font-medium text-gray-900">
                             {execution.integration?.name || 'Unknown'} • {execution.action}
@@ -177,13 +185,13 @@ export default async function ExecutionsPage({
                         </div>
                       </div>
                       <div className="text-xs text-gray-500">
-                        {new Date(execution.startedAt).toLocaleString()}
+                        {new Date(execution.createdAt).toLocaleString()}
                         {execution.completedAt && (
                           <span className="ml-2">
                             • Duration: {
                               Math.round(
                                 (new Date(execution.completedAt).getTime() -
-                                  new Date(execution.startedAt).getTime()) / 1000
+                                  new Date(execution.createdAt).getTime()) / 1000
                               )
                             }s
                           </span>
@@ -191,11 +199,6 @@ export default async function ExecutionsPage({
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      {execution.retryCount > 0 && (
-                        <span className="text-xs text-gray-500">
-                          Retries: {execution.retryCount}
-                        </span>
-                      )}
                       <Badge
                         variant={
                           execution.status === 'success'
@@ -209,9 +212,9 @@ export default async function ExecutionsPage({
                       </Badge>
                     </div>
                   </div>
-                  {execution.errorMessage && (
+                  {execution.error && (
                     <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
-                      <strong>Error:</strong> {execution.errorMessage}
+                      <strong>Error:</strong> {typeof execution.error === 'object' ? (execution.error as any).message || JSON.stringify(execution.error) : execution.error}
                     </div>
                   )}
                 </div>

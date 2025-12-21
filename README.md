@@ -1,4 +1,8 @@
-# 🚀 Embedded Integration Platform (B2B2C)
+# 🚀 Integration Platform (B2B2C)
+
+<p align="center">
+  <img src="rule-engine.png" alt="Integration Platform" width="200"/>
+</p>
 
 > **Help SaaS companies offer 100+ integrations to their users in days, not months**
 

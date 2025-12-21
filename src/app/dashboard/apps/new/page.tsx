@@ -25,7 +25,9 @@ export default function NewAppPage() {
       });
 
       if (response.ok) {
-        router.push('/dashboard/apps');
+        const data = await response.json();
+        // Redirect to the app detail page where the API key will be shown
+        router.push(`/dashboard/apps/${data.app.id}?new=true&apiKey=${encodeURIComponent(data.app.apiKey)}`);
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to create app');

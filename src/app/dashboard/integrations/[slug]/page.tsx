@@ -20,21 +20,35 @@ export default async function IntegrationDetailPage({
   // Fetch integration details
   const integration = await prisma.integration.findUnique({
     where: { slug: params.slug },
-    include: {
-      authMethods: true,
-      actions: {
-        where: { status: 'active' },
-        include: { schemas: true },
-      },
-      triggers: {
-        where: { status: 'active' },
-      },
-    },
   });
 
   if (!integration) {
     notFound();
   }
+
+  // Parse actions and triggers from JSON
+  const actions = integration.actions ? 
+    (typeof integration.actions === 'string' ? JSON.parse(integration.actions) : integration.actions) : 
+    {};
+  const triggers = integration.triggers ? 
+    (typeof integration.triggers === 'string' ? JSON.parse(integration.triggers) : integration.triggers) : 
+    {};
+
+  // Convert actions object to array
+  const actionsArray = Object.entries(actions).map(([key, value]: [string, any]) => ({
+    id: value.id || key,
+    name: value.name || key,
+    description: value.description || '',
+    slug: key,
+  }));
+
+  // Convert triggers object to array
+  const triggersArray = Object.entries(triggers).map(([key, value]: [string, any]) => ({
+    id: value.id || key,
+    name: value.name || key,
+    description: value.description || '',
+    slug: key,
+  }));
 
   // Fetch connections for this integration across all apps
   const connections = await prisma.endUserConnection.findMany({
@@ -48,37 +62,41 @@ export default async function IntegrationDetailPage({
       app: true,
       endUser: true,
     },
-    orderBy: { connectedAt: 'desc' },
+    orderBy: { createdAt: 'desc' },
   });
 
   // Fetch recent executions
   const executions = await prisma.execution.findMany({
     where: {
       integrationId: integration.id,
-      accountId: session.accountId,
+      app: {
+        accountId: session.accountId,
+      },
     },
-    orderBy: { startedAt: 'desc' },
+    orderBy: { createdAt: 'desc' },
     take: 10,
     include: {
       app: true,
+      endUser: true,
     },
   });
-
-  const integrationIcons: Record<string, string> = {
-    slack: '💬',
-    notion: '📝',
-    'google-sheets': '📊',
-    default: '🔌',
-  };
-
-  const icon = integrationIcons[integration.slug] || integrationIcons.default;
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-4">
-          <span className="text-6xl">{icon}</span>
+          <div className="w-16 h-16 bg-white border border-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-md">
+            {integration.logo ? (
+              <img 
+                src={integration.logo} 
+                alt={integration.name}
+                className="w-full h-full object-contain p-2"
+              />
+            ) : (
+              <span className="text-4xl">🔌</span>
+            )}
+          </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900">{integration.name}</h1>
             <p className="text-gray-600 mt-1">{integration.description}</p>
@@ -129,7 +147,7 @@ export default async function IntegrationDetailPage({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-900">
-              {integration.actions.length}
+              {actionsArray.length}
             </div>
           </CardContent>
         </Card>
@@ -142,7 +160,7 @@ export default async function IntegrationDetailPage({
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-gray-900">
-              {integration.triggers.length}
+              {triggersArray.length}
             </div>
           </CardContent>
         </Card>
@@ -155,7 +173,7 @@ export default async function IntegrationDetailPage({
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {integration.actions.map((action) => (
+            {actionsArray.map((action) => (
               <div
                 key={action.id}
                 className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
@@ -171,7 +189,7 @@ export default async function IntegrationDetailPage({
                 </div>
               </div>
             ))}
-            {integration.actions.length === 0 && (
+            {actionsArray.length === 0 && (
               <p className="text-center py-8 text-gray-500">No actions available</p>
             )}
           </div>
@@ -204,7 +222,7 @@ export default async function IntegrationDetailPage({
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">
-                    Connected {new Date(conn.connectedAt).toLocaleDateString()}
+                    Connected {new Date(conn.createdAt).toLocaleDateString()}
                   </div>
                 </div>
               ))}
@@ -231,7 +249,7 @@ export default async function IntegrationDetailPage({
                   <div>
                     <div className="font-medium text-gray-900">{execution.action}</div>
                     <div className="text-sm text-gray-600">
-                      {execution.app.name} • {new Date(execution.startedAt).toLocaleString()}
+                      {execution.app.name} • {new Date(execution.createdAt).toLocaleString()}
                     </div>
                   </div>
                   <Badge

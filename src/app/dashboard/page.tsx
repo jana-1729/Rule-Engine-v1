@@ -36,11 +36,12 @@ export default async function DashboardPage() {
           accountId: session.accountId
         }
       },
-      orderBy: { startedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: 10,
       include: {
         integration: true,
         app: true,
+        endUser: true,
       },
     }),
   ]);
@@ -182,10 +183,16 @@ export default async function DashboardPage() {
                   className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:bg-gray-50 hover:border-gray-200 transition-all cursor-pointer"
                 >
                   <div className="flex items-center space-x-4 flex-1">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <span className="text-xl">
-                        {execution.integration?.slug === 'slack' ? '💬' : '🔌'}
-                      </span>
+                    <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {execution.integration?.logo ? (
+                        <img 
+                          src={execution.integration.logo} 
+                          alt={execution.integration.name}
+                          className="w-full h-full object-contain p-1"
+                        />
+                      ) : (
+                        <span className="text-xl">🔌</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
@@ -199,7 +206,7 @@ export default async function DashboardPage() {
                         <p className="text-xs text-gray-500">{execution.app?.name}</p>
                         <span className="text-gray-300">•</span>
                         <p className="text-xs text-gray-500">
-                          {new Date(execution.startedAt).toLocaleString()}
+                          {new Date(execution.createdAt).toLocaleString()}
                         </p>
                       </div>
                     </div>

@@ -10,6 +10,46 @@ const createAppSchema = z.object({
   description: z.string().optional(),
 });
 
+export async function GET(request: NextRequest) {
+  try {
+    const session = await requireAuth();
+
+    // Fetch all apps for this account
+    const apps = await prisma.app.findMany({
+      where: {
+        accountId: session.accountId,
+      },
+      select: {
+        id: true,
+        appId: true,
+        name: true,
+        description: true,
+        status: true,
+        createdAt: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      apps,
+    });
+  } catch (error: any) {
+    console.error('Failed to fetch apps:', error);
+
+    if (error.message === 'Unauthorized') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    return NextResponse.json(
+      { error: 'Failed to fetch apps' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await requireAuth();
@@ -21,39 +61,26 @@ export async function POST(request: NextRequest) {
     const apiKey = generateApiKey(appId);
     const apiKeyHash = hashApiKey(apiKey);
 
-    // Create app and API key version in transaction
-    const result = await prisma.$transaction(async (tx) => {
-      const app = await tx.app.create({
-        data: {
-          accountId: session.accountId,
-          appId,
-          apiKey: apiKeyHash,
-          name,
-          description,
-          status: 'active',
-        },
-      });
-
-      await tx.apiKeyVersion.create({
-        data: {
-          appId: app.id,
-          keyHash: apiKeyHash,
-          keyPrefix: getKeyPrefix(apiKey),
-          status: 'active',
-        },
-      });
-
-      return { app, apiKey };
+    // Create app
+    const app = await prisma.app.create({
+      data: {
+        accountId: session.accountId,
+        appId,
+        apiKey: apiKeyHash,
+        name,
+        description,
+        status: 'active',
+      },
     });
 
     return NextResponse.json(
       {
         success: true,
         app: {
-          id: result.app.id,
-          appId: result.app.appId,
-          name: result.app.name,
-          apiKey: result.apiKey, // Show once on creation
+          id: app.id,
+          appId: app.appId,
+          name: app.name,
+          apiKey: apiKey, // Show once on creation
         },
       },
       { status: 201 }
