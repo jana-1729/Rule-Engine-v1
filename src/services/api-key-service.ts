@@ -242,17 +242,22 @@ export class APIKeyService {
       },
       select: {
         status: true,
-        duration: true,
         createdAt: true,
+        completedAt: true,
       },
     });
 
     const totalRequests = executions.length;
     const successfulRequests = executions.filter((e) => e.status === 'success').length;
-    const failedRequests = executions.filter((e) => e.status === 'failure').length;
+    const failedRequests = executions.filter((e) => e.status === 'failed').length;
 
     const averageResponseTime =
-      executions.reduce((sum, e) => sum + (e.duration || 0), 0) / totalRequests || 0;
+      executions.reduce((sum, e) => {
+        const duration = e.completedAt && e.createdAt 
+          ? e.completedAt.getTime() - e.createdAt.getTime()
+          : 0;
+        return sum + duration;
+      }, 0) / totalRequests || 0;
 
     // Group by day
     const requestsByDay: Record<string, number> = {};

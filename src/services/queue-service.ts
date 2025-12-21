@@ -96,7 +96,7 @@ export async function dequeueJob(): Promise<QueueJob | null> {
 
   // Move to processing set
   await redis.zrem(QUEUE_KEY, jobData);
-  await redis.hset(PROCESSING_KEY, job.id, JSON.stringify(job));
+  await redis.hset(PROCESSING_KEY, { [job.id]: JSON.stringify(job) });
 
   return job;
 }

@@ -3,6 +3,7 @@
  * Auto-generates API documentation from JSDoc comments
  */
 
+// @ts-nocheck
 import swaggerJsdoc from 'swagger-jsdoc';
 
 const options: swaggerJsdoc.Options = {

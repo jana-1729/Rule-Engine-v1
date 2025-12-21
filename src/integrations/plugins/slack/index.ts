@@ -8,17 +8,18 @@ import axios from 'axios';
  * Send messages, create channels, and manage Slack workspaces
  */
 
-const metadata = BaseIntegration.prototype['createMetadata']({
+const metadata = {
+  id: 'slack',
   slug: 'slack',
   name: 'Slack',
   description: 'Send messages and manage Slack workspaces',
-  category: 'communication',
+  category: 'communication' as const,
   icon: '/integrations/slack.svg',
   version: '1.0.0',
-  authType: 'oauth2',
+  authType: 'oauth2' as const,
   website: 'https://slack.com',
   documentation: 'https://api.slack.com',
-});
+};
 
 // ============================================
 // ACTIONS

@@ -106,41 +106,42 @@ export async function GET(request: NextRequest) {
       : null;
 
     // Create or update connection
-    const connection = await prisma.endUserConnection.upsert({
+    const existingConnection = await prisma.endUserConnection.findFirst({
       where: {
-        appId_endUserId_integrationId: {
-          appId: oauthState.appId,
-          endUserId: oauthState.endUserId,
-          integrationId: integration.id,
-        },
-      },
-      create: {
         appId: oauthState.appId,
         endUserId: oauthState.endUserId,
         integrationId: integration.id,
-        name: `${integration.name} Connection`,
-        credentials: {
-          accessToken: encryptedAccessToken,
-          refreshToken: encryptedRefreshToken,
-          ...otherData,
-        },
-        scopes: scope ? scope.split(' ') : [],
-        expiresAt,
-        status: 'active',
-      },
-      update: {
-        credentials: {
-          accessToken: encryptedAccessToken,
-          refreshToken: encryptedRefreshToken,
-          ...otherData,
-        },
-        scopes: scope ? scope.split(' ') : [],
-        expiresAt,
-        status: 'active',
-        errorCount: 0,
-        lastError: null,
       },
     });
+
+    let connection;
+    if (existingConnection) {
+      connection = await prisma.endUserConnection.update({
+        where: { id: existingConnection.id },
+        data: {
+          accessToken: encryptedAccessToken,
+          refreshToken: encryptedRefreshToken,
+          expiresAt,
+          scope: scope || undefined,
+          status: 'active',
+          errorCount: 0,
+          lastError: undefined,
+        },
+      });
+    } else {
+      connection = await prisma.endUserConnection.create({
+        data: {
+          appId: oauthState.appId,
+          endUserId: oauthState.endUserId,
+          integrationId: integration.id,
+          accessToken: encryptedAccessToken,
+          refreshToken: encryptedRefreshToken,
+          expiresAt,
+          scope: scope || undefined,
+          status: 'active',
+        },
+      });
+    }
 
     // Update end user last active
     await prisma.endUser.update({

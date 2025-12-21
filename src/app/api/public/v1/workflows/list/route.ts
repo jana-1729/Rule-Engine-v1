@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
             name: true,
             description: true,
             category: true,
-            icon: true,
+            logo: true,
           },
         },
         _count: {

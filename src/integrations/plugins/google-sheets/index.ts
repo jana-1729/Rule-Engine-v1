@@ -8,17 +8,18 @@ import axios from 'axios';
  * Read, write, and manage Google Sheets
  */
 
-const metadata = BaseIntegration.prototype['createMetadata']({
+const metadata = {
+  id: 'google-sheets',
   slug: 'google-sheets',
   name: 'Google Sheets',
   description: 'Read, write, and manage Google Sheets',
-  category: 'productivity',
+  category: 'productivity' as const,
   icon: '/integrations/google-sheets.svg',
   version: '1.0.0',
-  authType: 'oauth2',
+  authType: 'oauth2' as const,
   website: 'https://sheets.google.com',
   documentation: 'https://developers.google.com/sheets/api',
-});
+};
 
 // ============================================
 // ACTIONS

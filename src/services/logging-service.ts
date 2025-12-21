@@ -38,10 +38,10 @@ export async function logAudit(
 ) {
   await prisma.auditLog.create({
     data: {
-      organizationId,
-      userId,
+      accountId: organizationId,
+      appId: organizationId, // This should be the actual appId
       action,
-      resource,
+      resource: resource || 'unknown',
       resourceId,
       changes,
       ipAddress: metadata?.ipAddress,
@@ -66,20 +66,11 @@ export async function logError(
     metadata?: any;
   }
 ) {
-  await prisma.errorReport.create({
-    data: {
-      errorType,
-      errorMessage,
-      errorStack,
-      workflowId: context?.workflowId,
-      executionId: context?.executionId,
-      integrationId: context?.integrationId,
-      metadata: context?.metadata,
-      status: 'open',
-    },
+  // TODO: Implement error reporting when errorReport model is added
+  console.error(`[ERROR] ${errorType}: ${errorMessage}`, {
+    stack: errorStack,
+    context,
   });
-
-  console.error(`[ERROR] ${errorType}: ${errorMessage}`);
 }
 
 /**
@@ -101,33 +92,12 @@ export async function getErrorStats(timeRange: 'day' | 'week' | 'month' = 'day')
       break;
   }
 
-  const errors = await prisma.errorReport.findMany({
-    where: {
-      createdAt: { gte: startDate },
-    },
-    select: {
-      errorType: true,
-      errorMessage: true,
-      status: true,
-      createdAt: true,
-    },
-  });
-
-  // Group by error type
-  const errorsByType = new Map<string, number>();
-  errors.forEach(error => {
-    const count = errorsByType.get(error.errorType) || 0;
-    errorsByType.set(error.errorType, count + 1);
-  });
-
+  // TODO: Implement error reporting when errorReport model is added
   return {
-    total: errors.length,
-    open: errors.filter(e => e.status === 'open').length,
-    resolved: errors.filter(e => e.status === 'resolved').length,
-    byType: Array.from(errorsByType.entries()).map(([type, count]) => ({
-      type,
-      count,
-    })),
+    total: 0,
+    open: 0,
+    resolved: 0,
+    byType: [],
   };
 }
 

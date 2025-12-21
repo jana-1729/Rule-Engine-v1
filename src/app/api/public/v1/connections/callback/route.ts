@@ -73,8 +73,8 @@ export async function GET(request: NextRequest) {
     const { access_token, refresh_token, expires_in, scope } = tokenResponse.data;
 
     // Encrypt tokens
-    const encryptedAccessToken = encrypt(access_token);
-    const encryptedRefreshToken = refresh_token ? encrypt(refresh_token) : null;
+    const encryptedAccessToken = await encrypt(access_token);
+    const encryptedRefreshToken = refresh_token ? await encrypt(refresh_token) : null;
 
     // Calculate expiration
     const expiresAt = expires_in

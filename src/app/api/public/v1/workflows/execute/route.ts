@@ -58,6 +58,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Parse workflow definition
+    if (!workflow.definition) {
+      return NextResponse.json(
+        { error: 'Workflow definition is missing' },
+        { status: 400 }
+      );
+    }
+
+    const definition = typeof workflow.definition === 'string' 
+      ? JSON.parse(workflow.definition) 
+      : workflow.definition;
+
+    if (!definition.action) {
+      return NextResponse.json(
+        { error: 'Workflow action is not configured' },
+        { status: 400 }
+      );
+    }
+
     // Verify end user belongs to this app
     const endUser = await prisma.endUser.findFirst({
       where: {
@@ -103,7 +122,7 @@ export async function POST(request: NextRequest) {
         endUserId,
         workflowId,
         integrationId: workflow.integrationId,
-        action: workflow.definition.action,
+        action: definition.action,
         input: data,
         status: 'running',
         requestId,
@@ -115,6 +134,7 @@ export async function POST(request: NextRequest) {
     try {
       const result = await executeWorkflow(
         workflow,
+        definition,
         connection,
         data,
         execution.id,
@@ -132,7 +152,7 @@ export async function POST(request: NextRequest) {
             code: result.error.code,
             message: result.error.message,
             details: result.error.details,
-          } : null,
+          } : undefined,
           completedAt,
           logs: result.logs || [],
         },
@@ -190,6 +210,7 @@ export async function POST(request: NextRequest) {
 
 async function executeWorkflow(
   workflow: any,
+  definition: any,
   connection: any,
   inputData: Record<string, any>,
   executionId: string,
@@ -221,7 +242,7 @@ async function executeWorkflow(
     logger.info('Starting workflow execution', {
       workflowId: workflow.id,
       workflowName: workflow.name,
-      action: workflow.definition.action,
+      action: definition.action,
     });
 
     // Get the integration and action
@@ -230,15 +251,15 @@ async function executeWorkflow(
       throw new Error(`Integration ${workflow.integration.slug} not found in registry`);
     }
 
-    const action = integration.actions[workflow.definition.action];
+    const action = integration.actions[definition.action];
     if (!action) {
-      throw new Error(`Action ${workflow.definition.action} not found in integration`);
+      throw new Error(`Action ${definition.action} not found in integration`);
     }
 
     // Apply field mappings to input data
     const mappedInput = applyFieldMappings(
       inputData,
-      workflow.definition.fieldMappings,
+      definition.fieldMappings,
       logger
     );
 

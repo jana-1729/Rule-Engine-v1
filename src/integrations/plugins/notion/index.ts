@@ -8,17 +8,18 @@ import axios from 'axios';
  * Create pages, query databases, and manage Notion workspaces
  */
 
-const metadata = BaseIntegration.prototype['createMetadata']({
+const metadata = {
+  id: 'notion',
   slug: 'notion',
   name: 'Notion',
   description: 'Create pages, query databases, and manage Notion workspaces',
-  category: 'productivity',
+  category: 'productivity' as const,
   icon: '/integrations/notion.svg',
   version: '1.0.0',
-  authType: 'oauth2',
+  authType: 'oauth2' as const,
   website: 'https://notion.so',
   documentation: 'https://developers.notion.com',
-});
+};
 
 // ============================================
 // ACTIONS

@@ -1,22 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import 'swagger-ui-react/swagger-ui.css';
-
-// Dynamically import SwaggerUI to avoid SSR issues
-const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false });
+import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card';
+import { Button } from '@/ui/components/button';
+import Link from 'next/link';
 
 export default function APIDocsPage() {
-  const [spec, setSpec] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/docs')
-      .then((res) => res.json())
-      .then((data) => setSpec(data))
-      .catch((err) => console.error('Failed to load API spec:', err));
-  }, []);
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -24,7 +12,7 @@ export default function APIDocsPage() {
         <div className="container mx-auto px-4">
           <h1 className="text-4xl font-bold mb-2">API Documentation</h1>
           <p className="text-blue-100 text-lg">
-            Complete reference for the Rule Engine API
+            Complete reference for the Integration Platform API
           </p>
         </div>
       </div>
@@ -33,42 +21,107 @@ export default function APIDocsPage() {
       <div className="border-b bg-gray-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex gap-6 text-sm">
-            <a href="#getting-started" className="text-blue-600 hover:text-blue-800 font-medium">
-              Getting Started
-            </a>
-            <a href="#authentication" className="text-blue-600 hover:text-blue-800 font-medium">
-              Authentication
-            </a>
-            <a href="#endpoints" className="text-blue-600 hover:text-blue-800 font-medium">
-              API Endpoints
-            </a>
-            <a href="/docs/sdk" className="text-blue-600 hover:text-blue-800 font-medium">
+            <Link href="/dashboard/docs/api" className="text-blue-600 hover:text-blue-800 font-medium">
+              API Reference
+            </Link>
+            <Link href="/dashboard/docs/sdk" className="text-blue-600 hover:text-blue-800 font-medium">
               SDKs
-            </a>
-            <a href="/dashboard" className="text-blue-600 hover:text-blue-800 font-medium">
+            </Link>
+            <Link href="/dashboard/docs/guides" className="text-blue-600 hover:text-blue-800 font-medium">
+              Guides
+            </Link>
+            <Link href="/dashboard" className="text-blue-600 hover:text-blue-800 font-medium">
               Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Swagger UI */}
+      {/* Content */}
       <div className="container mx-auto px-4 py-8">
-        {spec ? (
-          <SwaggerUI 
-            spec={spec} 
-            docExpansion="list"
-            defaultModelsExpandDepth={1}
-            displayRequestDuration={true}
-          />
-        ) : (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading API documentation...</p>
-            </div>
-          </div>
-        )}
+        <div className="max-w-4xl mx-auto space-y-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Welcome to the API Documentation</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-700">
+                Our API allows you to programmatically manage integrations, workflows, and user connections.
+                Choose from the options below to get started.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                <Link href="/dashboard/docs/api">
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardContent className="p-6 text-center">
+                      <div className="text-4xl mb-3">📚</div>
+                      <h3 className="font-semibold mb-2">API Reference</h3>
+                      <p className="text-sm text-gray-600">
+                        Complete endpoint documentation
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                <Link href="/dashboard/docs/sdk">
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardContent className="p-6 text-center">
+                      <div className="text-4xl mb-3">💻</div>
+                      <h3 className="font-semibold mb-2">SDK Documentation</h3>
+                      <p className="text-sm text-gray-600">
+                        Client libraries and examples
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+
+                <Link href="/dashboard/docs/guides">
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                    <CardContent className="p-6 text-center">
+                      <div className="text-4xl mb-3">🚀</div>
+                      <h3 className="font-semibold mb-2">Integration Guides</h3>
+                      <p className="text-sm text-gray-600">
+                        Step-by-step tutorials
+                      </p>
+                    </CardContent>
+                  </Card>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Start</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ol className="list-decimal list-inside space-y-3 text-gray-700">
+                <li>
+                  <strong>Create an App:</strong> Go to the{' '}
+                  <Link href="/dashboard/apps" className="text-blue-600 hover:underline">
+                    Apps
+                  </Link>{' '}
+                  section and create a new application to get your API key.
+                </li>
+                <li>
+                  <strong>Authenticate:</strong> Include your API key in the{' '}
+                  <code className="px-1 py-0.5 bg-gray-100 rounded">X-API-Key</code> header.
+                </li>
+                <li>
+                  <strong>Make Requests:</strong> Use our REST API to manage integrations and workflows.
+                </li>
+              </ol>
+
+              <div className="bg-gray-100 p-4 rounded-md font-mono text-sm mt-4">
+                <pre>
+                  curl -X GET \<br />
+                  {'  '}https://your-platform.com/api/public/v1/integrations \<br />
+                  {'  '}-H "X-API-Key: YOUR_API_KEY"
+                </pre>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Footer */}
@@ -81,11 +134,10 @@ export default function APIDocsPage() {
             </a>
           </p>
           <p className="text-sm">
-            © 2025 Rule Engine. All rights reserved.
+            © 2025 Integration Platform. All rights reserved.
           </p>
         </div>
       </div>
     </div>
   );
 }
-

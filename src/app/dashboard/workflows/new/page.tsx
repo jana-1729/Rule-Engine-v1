@@ -13,7 +13,6 @@ import {
   Settings,
   AlertCircle
 } from 'lucide-react';
-import { WorkflowCanvas } from '@/ui/workflow/workflow-canvas';
 import { IntegrationSelector } from '@/ui/workflow/integration-selector';
 import { ActionConfigurator } from '@/ui/workflow/action-configurator';
 import { FieldMappingConfigurator } from '@/ui/workflow/field-mapping-configurator';

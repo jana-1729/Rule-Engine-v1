@@ -89,13 +89,11 @@ export async function POST(
     }
 
     // Get connection
-    const connection = await prisma.endUserConnection.findUnique({
+    const connection = await prisma.endUserConnection.findFirst({
       where: {
-        appId_endUserId_integrationId: {
-          appId: app.id,
-          endUserId: endUser.id,
-          integrationId: integration.id,
-        },
+        appId: app.id,
+        endUserId: endUser.id,
+        integrationId: integration.id,
       },
     });
 
@@ -131,8 +129,7 @@ export async function POST(
     }
 
     // Decrypt credentials
-    const credentials = connection.credentials as any;
-    const decryptedAccessToken = await decrypt(credentials.accessToken);
+    const decryptedAccessToken = await decrypt(connection.accessToken);
 
     // Execute action
     const result = await actionHandler.execute(
@@ -140,8 +137,8 @@ export async function POST(
       {
         type: integration.authType as any,
         data: {
-          ...credentials,
           accessToken: decryptedAccessToken,
+          refreshToken: connection.refreshToken ? await decrypt(connection.refreshToken) : undefined,
         },
       },
       {
@@ -166,20 +163,19 @@ export async function POST(
         id: executionId,
         appId: app.id,
         endUserId: endUser.id,
-        connectionId: connection.id,
         integrationId: integration.id,
         action: params.action,
         input,
         output: result.data,
         status: result.success ? 'success' : 'failed',
-        errorCode: result.error?.code,
-        errorMessage: result.error?.message,
-        errorDetails: result.error?.details,
-        duration,
-        finishedAt: new Date(),
+        error: result.error ? {
+          code: result.error.code,
+          message: result.error.message,
+          details: result.error.details,
+        } : undefined,
+        logs: [],
+        completedAt: new Date(),
         requestId: executionId,
-        ipAddress: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip'),
-        userAgent: request.headers.get('user-agent'),
       },
     });
 
@@ -189,7 +185,7 @@ export async function POST(
       data: {
         lastUsedAt: new Date(),
         errorCount: result.success ? 0 : connection.errorCount + 1,
-        lastError: result.success ? null : result.error,
+        lastError: result.success ? undefined : result.error,
       },
     });
 
@@ -236,29 +232,6 @@ export async function POST(
     }
   } catch (error: any) {
     console.error('Execution error:', error);
-
-    // Log failed execution
-    try {
-      await prisma.execution.create({
-        data: {
-          id: executionId,
-          appId: (await verifyApiKey(request.headers.get('x-api-key')!))!.id,
-          endUserId: body.endUserId,
-          connectionId: 'unknown',
-          integrationId: 'unknown',
-          action: params.action,
-          input: body.input,
-          status: 'failed',
-          errorCode: 'INTERNAL_ERROR',
-          errorMessage: error.message,
-          duration: Date.now() - startTime,
-          finishedAt: new Date(),
-          requestId: executionId,
-        },
-      });
-    } catch (logError) {
-      console.error('Failed to log error:', logError);
-    }
 
     return NextResponse.json(
       { error: 'Execution failed', message: error.message, executionId },

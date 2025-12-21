@@ -24,7 +24,7 @@ export interface DashboardMetrics {
  * Get dashboard metrics for an organization
  */
 export async function getDashboardMetrics(
-  organizationId: string
+  appId: string
 ): Promise<DashboardMetrics> {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -40,47 +40,49 @@ export async function getDashboardMetrics(
   ] = await Promise.all([
     // Total workflows
     prisma.workflow.count({
-      where: { organizationId },
+      where: { appId },
     }),
 
     // Active workflows
     prisma.workflow.count({
-      where: { organizationId, status: 'active' },
+      where: { appId, enabled: true },
     }),
 
     // Total executions
-    prisma.workflowExecution.count({
-      where: { organizationId },
+    prisma.execution.count({
+      where: { appId },
     }),
 
     // Executions today
-    prisma.workflowExecution.count({
+    prisma.execution.count({
       where: {
-        organizationId,
-        startedAt: { gte: today },
+        appId,
+        createdAt: { gte: today },
       },
     }),
 
     // Recent executions
-    prisma.workflowExecution.findMany({
-      where: { organizationId },
+    prisma.execution.findMany({
+      where: { appId },
       include: {
         workflow: {
           select: { name: true },
         },
       },
-      orderBy: { startedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: 10,
     }),
 
     // All executions for calculations
-    prisma.workflowExecution.findMany({
-      where: { organizationId },
+    prisma.execution.findMany({
+      where: { appId },
       select: {
         status: true,
-        duration: true,
+        createdAt: true,
+        completedAt: true,
         workflow: {
           select: {
+            id: true,
             definition: true,
           },
         },
@@ -97,8 +99,8 @@ export async function getDashboardMetrics(
 
   // Calculate average execution time
   const validDurations = allExecutions
-    .filter(e => e.duration !== null)
-    .map(e => e.duration!);
+    .filter(e => e.completedAt && e.createdAt)
+    .map(e => e.completedAt!.getTime() - e.createdAt!.getTime());
   const averageExecutionTime =
     validDurations.length > 0
       ? validDurations.reduce((sum, d) => sum + d, 0) / validDurations.length
@@ -107,6 +109,7 @@ export async function getDashboardMetrics(
   // Top integrations
   const integrationCounts = new Map<string, number>();
   allExecutions.forEach(exec => {
+    if (!exec.workflow) return;
     const definition = exec.workflow.definition as any;
     if (definition?.steps) {
       definition.steps.forEach((step: any) => {
@@ -124,15 +127,16 @@ export async function getDashboardMetrics(
   // Failing workflows
   const workflowFailures = new Map<string, number>();
   allExecutions
-    .filter(e => e.status === 'failed')
+    .filter(e => e.status === 'failed' && e.workflow)
     .forEach(exec => {
-      const count = workflowFailures.get(exec.workflow.definition as any) || 0;
-      workflowFailures.set(exec.workflow.definition as any, count + 1);
+      const workflowId = exec.workflow?.id || 'unknown';
+      const count = workflowFailures.get(workflowId) || 0;
+      workflowFailures.set(workflowId, count + 1);
     });
 
   const failingWorkflows = await prisma.workflow.findMany({
     where: {
-      organizationId,
+      appId,
       id: {
         in: Array.from(workflowFailures.keys()).slice(0, 5),
       },
@@ -140,7 +144,7 @@ export async function getDashboardMetrics(
     select: {
       id: true,
       name: true,
-      status: true,
+      enabled: true,
     },
   });
 
@@ -162,17 +166,17 @@ export async function getDashboardMetrics(
  */
 export async function getWorkflowMetrics(workflowId: string) {
   const [executions, lastExecution] = await Promise.all([
-    prisma.workflowExecution.findMany({
+    prisma.execution.findMany({
       where: { workflowId },
       select: {
         status: true,
-        duration: true,
-        startedAt: true,
+        createdAt: true,
+        completedAt: true,
       },
     }),
-    prisma.workflowExecution.findFirst({
+    prisma.execution.findFirst({
       where: { workflowId },
-      orderBy: { startedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     }),
   ]);
 
@@ -182,8 +186,8 @@ export async function getWorkflowMetrics(workflowId: string) {
   const running = executions.filter(e => e.status === 'running').length;
 
   const durations = executions
-    .filter(e => e.duration)
-    .map(e => e.duration!);
+    .filter(e => e.completedAt && e.createdAt)
+    .map(e => e.completedAt!.getTime() - e.createdAt!.getTime());
 
   const avgDuration =
     durations.length > 0
@@ -193,7 +197,7 @@ export async function getWorkflowMetrics(workflowId: string) {
   // Group by day for chart
   const executionsByDay = new Map<string, { success: number; failed: number }>();
   executions.forEach(exec => {
-    const day = exec.startedAt.toISOString().split('T')[0];
+    const day = exec.createdAt.toISOString().split('T')[0];
     const current = executionsByDay.get(day) || { success: 0, failed: 0 };
     if (exec.status === 'success') current.success++;
     if (exec.status === 'failed') current.failed++;
@@ -219,7 +223,7 @@ export async function getWorkflowMetrics(workflowId: string) {
  * Record usage metric
  */
 export async function recordUsageMetric(
-  organizationId: string,
+  appId: string,
   metricType: string,
   value: number,
   metadata?: {
@@ -234,11 +238,10 @@ export async function recordUsageMetric(
 
   await prisma.usageMetric.create({
     data: {
-      organizationId,
+      accountId: appId, // This should be the actual accountId
+      appId,
       metricType,
       value,
-      workflowId: metadata?.workflowId,
-      integrationId: metadata?.integrationId,
       periodStart,
       periodEnd,
     },

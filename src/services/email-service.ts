@@ -42,7 +42,7 @@ export class EmailService {
   private initializeTransporter() {
     if (this.provider === 'smtp') {
       // SMTP Configuration
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.SMTP_PORT || '587'),
         secure: process.env.SMTP_SECURE === 'true',
@@ -53,7 +53,7 @@ export class EmailService {
       });
     } else if (this.provider === 'sendgrid') {
       // SendGrid Configuration
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: 'smtp.sendgrid.net',
         port: 587,
         auth: {
@@ -63,7 +63,7 @@ export class EmailService {
       });
     } else if (this.provider === 'ses') {
       // AWS SES Configuration
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: `email-smtp.${process.env.AWS_REGION || 'us-east-1'}.amazonaws.com`,
         port: 587,
         auth: {
