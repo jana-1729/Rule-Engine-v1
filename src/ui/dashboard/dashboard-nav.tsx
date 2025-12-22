@@ -49,6 +49,11 @@ const navigation: NavSection[] = [
         icon: <Package className="w-5 h-5" />,
       },
       {
+        name: 'Integration Health',
+        href: '/dashboard/integrations/health',
+        icon: <Activity className="w-5 h-5" />,
+      },
+      {
         name: 'Workflows',
         href: '/dashboard/workflows',
         icon: <GitBranch className="w-5 h-5" />,

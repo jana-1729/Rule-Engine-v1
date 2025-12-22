@@ -92,6 +92,7 @@ export async function loadIntegrations() {
     import('./plugins/google-sheets'),
     import('./plugins/notion'),
     import('./plugins/slack'),
+    import('./plugins/gmail'),
     // Add more as they're created
   ];
 

@@ -3,11 +3,20 @@ import { getSession } from '@/lib/session';
 import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card';
 import { Badge } from '@/ui/components/badge';
 import { ExecutionFilters } from '@/ui/dashboard/execution-filters';
+import { ExportButton } from '@/ui/dashboard/export-button';
+import { Suspense } from 'react';
 
 export default async function ExecutionsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; integration?: string; app?: string };
+  searchParams: { 
+    status?: string; 
+    integration?: string; 
+    app?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    search?: string;
+  };
 }) {
   const session = await getSession();
 
@@ -34,6 +43,27 @@ export default async function ExecutionsPage({
     where.appId = searchParams.app;
   }
 
+  // Date range filter
+  if (searchParams.dateFrom || searchParams.dateTo) {
+    where.createdAt = {};
+    if (searchParams.dateFrom) {
+      where.createdAt.gte = new Date(searchParams.dateFrom);
+    }
+    if (searchParams.dateTo) {
+      const dateTo = new Date(searchParams.dateTo);
+      dateTo.setHours(23, 59, 59, 999); // End of day
+      where.createdAt.lte = dateTo;
+    }
+  }
+
+  // Search filter (search in action, requestId, or endUser externalId)
+  if (searchParams.search) {
+    where.OR = [
+      { action: { contains: searchParams.search, mode: 'insensitive' } },
+      { requestId: { contains: searchParams.search, mode: 'insensitive' } },
+    ];
+  }
+
   // Fetch executions
   const [executions, integrations, apps] = await Promise.all([
     prisma.execution.findMany({
@@ -47,7 +77,7 @@ export default async function ExecutionsPage({
       },
     }),
     prisma.integration.findMany({
-      where: { status: 'active' },
+      where: { status: 'available' },
       select: { id: true, name: true, slug: true },
     }),
     prisma.app.findMany({
@@ -140,8 +170,9 @@ export default async function ExecutionsPage({
 
       {/* Executions List */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Execution Logs</CardTitle>
+          <ExportButton executions={executions} />
         </CardHeader>
         <CardContent>
           {executions.length === 0 ? (
