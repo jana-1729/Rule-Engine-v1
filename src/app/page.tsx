@@ -142,16 +142,40 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Stats Section */}
+        <section className="py-16 bg-gray-50 border-y border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900 mb-2">100+</div>
+                <div className="text-sm text-gray-600">Integrations</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900 mb-2">99.9%</div>
+                <div className="text-sm text-gray-600">Uptime SLA</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900 mb-2">10M+</div>
+                <div className="text-sm text-gray-600">API Calls/Month</div>
+              </div>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-gray-900 mb-2">24/7</div>
+                <div className="text-sm text-gray-600">Support</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Features Section */}
         <section id="features" className="py-24 bg-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <Badge className="mb-4">Features</Badge>
+              <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600">Features</Badge>
               <h2 className="text-4xl font-bold text-gray-900 mb-4">
                 Everything you need to scale integrations
               </h2>
               <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Built for developers, designed for scale
+                Built for developers, designed for scale. Ship integrations 10x faster.
               </p>
             </div>
 
@@ -240,6 +264,261 @@ export default async function HomePage() {
                   Create complex workflows with our drag-and-drop builder. No code required.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Integrations Section */}
+        <section id="integrations" className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600">Integrations</Badge>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                Connect with your favorite tools
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Pre-built integrations with popular SaaS platforms. More added every week.
+              </p>
+            </div>
+
+            {/* Integration Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6 mb-12">
+              {[
+                { name: 'Slack', logo: '/assets/integrations/slack.jpeg', category: 'Communication' },
+                { name: 'Notion', logo: '/assets/integrations/notion.png', category: 'Productivity' },
+                { name: 'Google Sheets', logo: '/assets/integrations/google-sheets.webp', category: 'Spreadsheets' },
+                { name: 'Salesforce', icon: '☁️', category: 'CRM' },
+                { name: 'HubSpot', icon: '🎯', category: 'Marketing' },
+                { name: 'Stripe', icon: '💳', category: 'Payments' },
+                { name: 'Airtable', icon: '📊', category: 'Database' },
+                { name: 'Zapier', icon: '⚡', category: 'Automation' },
+                { name: 'GitHub', icon: '🐙', category: 'Development' },
+                { name: 'Jira', icon: '📋', category: 'Project Mgmt' },
+                { name: 'Asana', icon: '✅', category: 'Tasks' },
+                { name: 'Trello', icon: '📌', category: 'Boards' },
+              ].map((integration, index) => (
+                <div
+                  key={index}
+                  className="group bg-white rounded-xl p-6 border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 flex flex-col items-center justify-center text-center"
+                >
+                  {integration.logo ? (
+                    <div className="w-12 h-12 mb-3 rounded-lg overflow-hidden bg-white border border-gray-100 flex items-center justify-center">
+                      <img
+                        src={integration.logo}
+                        alt={integration.name}
+                        className="w-full h-full object-contain p-1"
+                      />
+                    </div>
+                  ) : (
+                    <div className="text-3xl mb-3">{integration.icon}</div>
+                  )}
+                  <h3 className="font-semibold text-gray-900 text-sm mb-1">{integration.name}</h3>
+                  <p className="text-xs text-gray-500">{integration.category}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* CTA */}
+            <div className="text-center">
+              <p className="text-gray-600 mb-4">
+                Don't see your integration? <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-medium">Request it →</Link>
+              </p>
+              <Link href="/signup">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                  View All Integrations
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-24 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <Badge className="mb-4 bg-gradient-to-r from-blue-600 to-purple-600">Pricing</Badge>
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                Simple, transparent pricing
+              </h2>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Start free, scale as you grow. No hidden fees.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {/* Free Plan */}
+              <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 hover:border-blue-300 transition-all">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-bold text-gray-900">$0</span>
+                    <span className="text-gray-600 ml-2">/month</span>
+                  </div>
+                  <p className="text-gray-600">Perfect for testing and small projects</p>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">1,000 API calls/month</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">3 integrations</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Community support</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Basic analytics</span>
+                  </li>
+                </ul>
+                <Link href="/signup">
+                  <Button variant="outline" className="w-full border-2">
+                    Get Started Free
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Pro Plan */}
+              <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl p-8 text-white relative overflow-hidden transform scale-105 shadow-2xl">
+                <div className="absolute top-4 right-4">
+                  <Badge className="bg-white text-blue-600">Popular</Badge>
+                </div>
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold mb-2">Professional</h3>
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-bold">$99</span>
+                    <span className="text-blue-100 ml-2">/month</span>
+                  </div>
+                  <p className="text-blue-100">For growing businesses</p>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-white mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>100,000 API calls/month</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-white mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Unlimited integrations</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-white mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Priority support</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-white mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Advanced analytics</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-white mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span>Custom workflows</span>
+                  </li>
+                </ul>
+                <Link href="/signup">
+                  <Button className="w-full bg-white text-blue-600 hover:bg-gray-50">
+                    Start 14-Day Trial
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Enterprise Plan */}
+              <div className="bg-white rounded-2xl border-2 border-gray-200 p-8 hover:border-blue-300 transition-all">
+                <div className="mb-6">
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-bold text-gray-900">Custom</span>
+                  </div>
+                  <p className="text-gray-600">For large-scale deployments</p>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Unlimited API calls</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Custom integrations</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">Dedicated support</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">SLA guarantee</span>
+                  </li>
+                  <li className="flex items-start">
+                    <svg className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-gray-700">On-premise option</span>
+                  </li>
+                </ul>
+                <Link href="/signup">
+                  <Button variant="outline" className="w-full border-2">
+                    Contact Sales
+                  </Button>
+                </Link>
+              </div>
+            </div>
+
+            {/* FAQ */}
+            <div className="mt-16 text-center">
+              <p className="text-gray-600">
+                Have questions? <Link href="/signup" className="text-blue-600 hover:text-blue-700 font-medium">Contact our sales team →</Link>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-24 bg-gradient-to-br from-blue-600 to-purple-600">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-4xl font-bold text-white mb-6">
+              Ready to ship integrations faster?
+            </h2>
+            <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto">
+              Join hundreds of companies using our platform to power their integrations.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link href="/signup">
+                <Button size="lg" className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-50 px-8 py-6">
+                  Start Free Trial
+                </Button>
+              </Link>
+              <Link href="/docs">
+                <Button size="lg" variant="outline" className="w-full sm:w-auto border-2 border-white text-white hover:bg-white/10 px-8 py-6">
+                  View Documentation
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
