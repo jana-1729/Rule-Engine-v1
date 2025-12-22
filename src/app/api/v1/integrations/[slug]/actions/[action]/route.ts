@@ -5,6 +5,8 @@ import { integrationRegistry } from '@/integrations/registry';
 import { decrypt } from '@/lib/encryption';
 import { nanoid } from 'nanoid';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Execute Integration Action
  * 

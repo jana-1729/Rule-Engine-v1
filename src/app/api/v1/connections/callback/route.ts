@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { encrypt } from '@/lib/encryption';
 import axios from 'axios';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * OAuth Callback Handler
  * 

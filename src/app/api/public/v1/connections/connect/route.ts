@@ -40,6 +40,8 @@
  *         description: OAuth URL to redirect user to
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { apiKeyService } from '@/services/api-key-service';

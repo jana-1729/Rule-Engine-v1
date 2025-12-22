@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { apiKeyService } from '@/services/api-key-service';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }

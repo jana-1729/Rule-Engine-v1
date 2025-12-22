@@ -5,6 +5,8 @@ import { generateApiKey, hashApiKey, getKeyPrefix } from '@/lib/auth';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const createAppSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),

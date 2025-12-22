@@ -4,6 +4,8 @@ import { generateApiKey, hashApiKey, getKeyPrefix } from '@/lib/auth';
 import { nanoid } from 'nanoid';
 import bcrypt from 'bcryptjs';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Create App
  * 

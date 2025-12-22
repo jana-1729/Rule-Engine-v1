@@ -4,6 +4,8 @@ import { apiKeyService } from '@/services/api-key-service';
 import { integrationRegistry } from '@/integrations/registry';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const executeWorkflowSchema = z.object({
   workflowId: z.string(),
   endUserId: z.string(),

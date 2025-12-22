@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const createWorkflowSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),

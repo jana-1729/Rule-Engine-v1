@@ -4,6 +4,8 @@ import { verifyApiKey } from '@/lib/auth';
 import { nanoid } from 'nanoid';
 import { integrationRegistry } from '@/integrations/registry';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Initialize OAuth Flow for End User
  * 

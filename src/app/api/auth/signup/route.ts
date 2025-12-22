@@ -6,6 +6,9 @@ import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const signupSchema = z.object({
   accountName: z.string().min(1),
   email: z.string().email(),

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { authenticateUser, createSession } from '@/lib/session';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),

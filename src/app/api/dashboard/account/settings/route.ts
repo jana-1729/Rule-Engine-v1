@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/session';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
+export const dynamic = 'force-dynamic';
+
 const settingsSchema = z.object({
   accountName: z.string().min(1),
   userName: z.string().min(1),
