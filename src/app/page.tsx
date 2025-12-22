@@ -70,7 +70,7 @@ export default async function HomePage() {
               
               {/* Subheadline */}
               <p className="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-                Stop building integrations from scratch. Our embedded platform handles OAuth, tokens, and API complexities—so you can focus on building your product.
+                Stop building integrations from scratch. Our embedded platform handles OAuth, tokens, and API complexities - so you can focus on building your product.
               </p>
 
               {/* CTA Buttons */}

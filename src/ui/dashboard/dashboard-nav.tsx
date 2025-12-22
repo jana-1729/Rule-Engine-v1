@@ -15,7 +15,8 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronRight,
-  Package
+  Package,
+  FileCode
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -78,6 +79,11 @@ const navigation: NavSection[] = [
     title: 'Resources',
     collapsible: true,
     items: [
+      {
+        name: 'Swagger API',
+        href: '/docs',
+        icon: <FileCode className="w-5 h-5" />,
+      },
       {
         name: 'API Documentation',
         href: '/dashboard/docs/api',
