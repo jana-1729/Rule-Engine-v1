@@ -1,7 +1,5 @@
 import { Integration } from '../../types';
-import { salesforceAuth } from './auth';
 import * as actions from './actions';
-import * as triggers from './triggers';
 
 /**
  * Salesforce Integration
@@ -14,19 +12,17 @@ import * as triggers from './triggers';
  */
 const salesforceIntegration: Integration = {
   metadata: {
-    slug: 'salesforce',
+    id: 'salesforce', slug: 'salesforce',
     name: 'Salesforce',
     description: 'Connect with Salesforce to automate your workflows',
     category: 'crm',
     version: '1.0.0',
-    logo: '/assets/integrations/salesforce.png',
-    color: '#00A1E0',
+    icon: '/assets/integrations/salesforce.png',
     website: 'https://salesforce.com',
-    documentation: 'https://developer.salesforce.com/docs/apis',
-    requiresEndUserAuth: true,
+    authType: 'oauth2' as const, documentation: 'https://developer.salesforce.com/docs/apis',
   },
 
-  auth: salesforceAuth,
+  auth: { type: "oauth2", config: { authorizationUrl: "", tokenUrl: "", clientId: "", clientSecret: "", scopes: [], redirectUri: "" } },
 
   actions: {
     create_lead: actions.createLead,

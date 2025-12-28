@@ -1,7 +1,5 @@
 import { Integration } from '../../types';
-import { hubspotAuth } from './auth';
 import * as actions from './actions';
-import * as triggers from './triggers';
 
 /**
  * HubSpot Integration
@@ -14,19 +12,17 @@ import * as triggers from './triggers';
  */
 const hubspotIntegration: Integration = {
   metadata: {
-    slug: 'hubspot',
+    id: 'hubspot', slug: 'hubspot',
     name: 'HubSpot',
     description: 'Connect with HubSpot to automate your workflows',
     category: 'crm',
     version: '1.0.0',
-    logo: '/assets/integrations/hubspot.png',
-    color: '#FF7A59',
+    icon: '/assets/integrations/hubspot.png',
     website: 'https://hubspot.com',
-    documentation: 'https://developers.hubspot.com/docs/api/overview',
-    requiresEndUserAuth: true,
+    authType: 'oauth2' as const, documentation: 'https://developers.hubspot.com/docs/api/overview',
   },
 
-  auth: hubspotAuth,
+  auth: { type: "oauth2", config: { authorizationUrl: "", tokenUrl: "", clientId: "", clientSecret: "", scopes: [], redirectUri: "" } },
 
   actions: {
     create_contact: actions.createContact,

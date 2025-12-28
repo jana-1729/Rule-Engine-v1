@@ -22,8 +22,8 @@ export const sendMessage: IntegrationAction = {
     timestamp: z.string().optional(),
   }),
 
-  async execute(input, context) {
-    const { credentials, logger } = context;
+  async execute(input, credentials, context) {
+    const { logger } = context;
     
     logger.info('Sending message to Microsoft Teams', { input });
     
@@ -33,7 +33,7 @@ export const sendMessage: IntegrationAction = {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${credentials.accessToken}`,
+            'Authorization': `Bearer ${credentials.data.accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({

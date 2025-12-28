@@ -1,7 +1,5 @@
 import { Integration } from '../../types';
-import { jiraAuth } from './auth';
 import * as actions from './actions';
-import * as triggers from './triggers';
 
 /**
  * Jira Integration
@@ -14,19 +12,17 @@ import * as triggers from './triggers';
  */
 const jiraIntegration: Integration = {
   metadata: {
-    slug: 'jira',
+    id: 'jira', slug: 'jira',
     name: 'Jira',
     description: 'Connect with Jira to automate your workflows',
     category: 'developer-tools',
     version: '1.0.0',
-    logo: '/assets/integrations/jira.png',
-    color: '#0052CC',
+    icon: '/assets/integrations/jira.png',
     website: 'https://jira.atlassian.com',
-    documentation: 'https://developer.atlassian.com/cloud/jira/platform/rest/v3/',
-    requiresEndUserAuth: true,
+    authType: 'oauth2' as const, documentation: 'https://developer.atlassian.com/cloud/jira/platform/rest/v3/',
   },
 
-  auth: jiraAuth,
+  auth: { type: "oauth2", config: { authorizationUrl: "", tokenUrl: "", clientId: "", clientSecret: "", scopes: [], redirectUri: "" } },
 
   actions: {
     create_issue: actions.createIssue,

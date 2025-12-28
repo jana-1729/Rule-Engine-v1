@@ -1,5 +1,4 @@
 import { Integration } from '../../types';
-import { gmailAuth } from './auth';
 import * as actions from './actions';
 import axios from 'axios';
 
@@ -63,6 +62,7 @@ const gmailIntegration: Integration = {
   actions: {
     send_email: actions.sendEmail,
     read_emails: actions.readEmails,
+    create_draft: actions.createDraft,
   },
 
   triggers: {},

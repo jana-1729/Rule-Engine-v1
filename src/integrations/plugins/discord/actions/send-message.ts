@@ -18,8 +18,8 @@ export const sendMessage: IntegrationAction = {
     timestamp: z.string().optional(),
   }),
 
-  async execute(input, context) {
-    const { credentials, logger } = context;
+  async execute(input, credentials, context) {
+    const { logger } = context;
     
     logger.info('Sending message to Discord', { input });
     
@@ -29,7 +29,7 @@ export const sendMessage: IntegrationAction = {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bot ${credentials.accessToken}`,
+            'Authorization': `Bot ${credentials.data.accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({

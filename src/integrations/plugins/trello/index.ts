@@ -1,7 +1,5 @@
 import { Integration } from '../../types';
-import { trelloAuth } from './auth';
 import * as actions from './actions';
-import * as triggers from './triggers';
 
 /**
  * Trello Integration
@@ -14,19 +12,17 @@ import * as triggers from './triggers';
  */
 const trelloIntegration: Integration = {
   metadata: {
-    slug: 'trello',
+    id: 'trello', slug: 'trello',
     name: 'Trello',
     description: 'Connect with Trello to automate your workflows',
     category: 'productivity',
     version: '1.0.0',
-    logo: '/assets/integrations/trello.png',
-    color: '#0079BF',
+    icon: '/assets/integrations/trello.png',
     website: 'https://trello.com',
-    documentation: 'https://developer.atlassian.com/cloud/trello/rest/',
-    requiresEndUserAuth: true,
+    authType: 'oauth2' as const, documentation: 'https://developer.atlassian.com/cloud/trello/rest/',
   },
 
-  auth: trelloAuth,
+  auth: { type: "oauth2", config: { authorizationUrl: "", tokenUrl: "", clientId: "", clientSecret: "", scopes: [], redirectUri: "" } },
 
   actions: {
     create_card: actions.createCard,

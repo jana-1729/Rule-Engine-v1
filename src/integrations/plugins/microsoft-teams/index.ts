@@ -1,7 +1,5 @@
 import { Integration } from '../../types';
-import { microsoftteamsAuth } from './auth';
 import * as actions from './actions';
-import * as triggers from './triggers';
 
 /**
  * Microsoft Teams Integration
@@ -14,19 +12,17 @@ import * as triggers from './triggers';
  */
 const microsoftteamsIntegration: Integration = {
   metadata: {
-    slug: 'microsoft-teams',
+    id: 'microsoft-teams', slug: 'microsoft-teams',
     name: 'Microsoft Teams',
     description: 'Connect with Microsoft Teams to automate your workflows',
     category: 'communication',
     version: '1.0.0',
-    logo: '/assets/integrations/teams.webp',
-    color: '#0078D4',
+    icon: '/assets/integrations/teams.webp',
     website: 'https://teams.microsoft.com',
-    documentation: 'https://docs.microsoft.com/en-us/graph/teams-concept-overview',
-    requiresEndUserAuth: true,
+    authType: 'oauth2' as const, documentation: 'https://docs.microsoft.com/en-us/graph/teams-concept-overview',
   },
 
-  auth: microsoftteamsAuth,
+  auth: { type: "oauth2", config: { authorizationUrl: "", tokenUrl: "", clientId: "", clientSecret: "", scopes: [], redirectUri: "" } },
 
   actions: {
     send_message: actions.sendMessage,

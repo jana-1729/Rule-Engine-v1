@@ -1,7 +1,5 @@
 import { Integration } from '../../types';
-import { discordAuth } from './auth';
 import * as actions from './actions';
-import * as triggers from './triggers';
 
 /**
  * Discord Integration
@@ -14,19 +12,17 @@ import * as triggers from './triggers';
  */
 const discordIntegration: Integration = {
   metadata: {
-    slug: 'discord',
+    id: 'discord', slug: 'discord',
     name: 'Discord',
     description: 'Connect with Discord to automate your workflows',
     category: 'communication',
     version: '1.0.0',
-    logo: '/assets/integrations/discord.webp',
-    color: '#5865F2',
+    icon: '/assets/integrations/discord.webp',
     website: 'https://discord.com',
-    documentation: 'https://discord.com/developers/docs/intro',
-    requiresEndUserAuth: true,
+    authType: 'oauth2' as const, documentation: 'https://discord.com/developers/docs/intro',
   },
 
-  auth: discordAuth,
+  auth: { type: "oauth2", config: { authorizationUrl: "", tokenUrl: "", clientId: "", clientSecret: "", scopes: [], redirectUri: "" } },
 
   actions: {
     send_message: actions.sendMessage,

@@ -1,2 +1,2 @@
-// Triggers will be added in future updates
-
+// Triggers placeholder - to be implemented
+export {};

@@ -12,8 +12,8 @@ describe('Gmail Integration', () => {
   it('should have OAuth2 auth configuration', () => {
     expect(gmailIntegration.auth).toBeDefined();
     expect(gmailIntegration.auth.type).toBe('oauth2');
-    expect(gmailIntegration.auth.oauth2).toBeDefined();
-    expect(gmailIntegration.auth.oauth2?.scopes).toContain('https://www.googleapis.com/auth/gmail.send');
+    expect(gmailIntegration.auth.config).toBeDefined();
+    expect((gmailIntegration.auth.config as any).scopes).toContain('https://www.googleapis.com/auth/gmail.send');
   });
 
   it('should have send_email action', () => {

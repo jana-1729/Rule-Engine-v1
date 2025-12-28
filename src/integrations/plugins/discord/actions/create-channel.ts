@@ -19,8 +19,8 @@ export const createChannel: IntegrationAction = {
     name: z.string().optional(),
   }),
 
-  async execute(input, context) {
-    const { credentials, logger } = context;
+  async execute(input, credentials, context) {
+    const { logger } = context;
     
     logger.info('Creating Discord channel', { input });
     
@@ -30,7 +30,7 @@ export const createChannel: IntegrationAction = {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bot ${credentials.accessToken}`,
+            'Authorization': `Bot ${credentials.data.accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({

@@ -18,8 +18,8 @@ export const updateOpportunity: IntegrationAction = {
     id: z.string().optional(),
   }),
 
-  async execute(input, context) {
-    const { credentials, logger } = context;
+  async execute(input, credentials, context) {
+    const { logger } = context;
     
     logger.info('Executing update_opportunity', { input });
     

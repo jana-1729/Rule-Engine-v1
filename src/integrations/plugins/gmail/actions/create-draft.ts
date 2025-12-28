@@ -4,15 +4,15 @@ import { google } from 'googleapis';
 import { errorRecovery } from '@/services/error-recovery-service';
 
 /**
- * Send Email Action for Gmail
+ * Create Draft Action for Gmail
  * 
- * Sends an email via Gmail API using googleapis SDK
- * Supports HTML/plain text, CC, BCC, and automatic retry
+ * Creates an email draft in Gmail using googleapis SDK
+ * Useful for preparing emails that need review before sending
  */
-export const sendEmail: IntegrationAction = {
-  id: 'send_email',
-  name: 'Send Email',
-  description: 'Send an email via Gmail',
+export const createDraft: IntegrationAction = {
+  id: 'create_draft',
+  name: 'Create Draft',
+  description: 'Create an email draft in Gmail',
   
   inputSchema: z.object({
     to: z.string().email().describe('Recipient email address'),
@@ -25,14 +25,13 @@ export const sendEmail: IntegrationAction = {
 
   outputSchema: z.object({
     id: z.string(),
-    threadId: z.string(),
-    labelIds: z.array(z.string()).optional(),
+    messageId: z.string().optional(),
   }),
 
   async execute(input, credentials, context) {
     const { logger } = context;
     
-    logger.info('Sending email via Gmail', { to: input.to, subject: input.subject });
+    logger.info('Creating email draft in Gmail', { to: input.to, subject: input.subject });
     
     try {
       // Initialize OAuth2 client
@@ -69,13 +68,15 @@ export const sendEmail: IntegrationAction = {
         .replace(/\//g, '_')
         .replace(/=+$/, '');
 
-      // Send email with automatic retry
+      // Create draft with automatic retry
       const result = await errorRecovery.executeWithRetry(
         async () => {
-          return await gmail.users.messages.send({
+          return await gmail.users.drafts.create({
             userId: 'me',
             requestBody: {
-              raw: encodedEmail,
+              message: {
+                raw: encodedEmail,
+              },
             },
           });
         },
@@ -85,28 +86,27 @@ export const sendEmail: IntegrationAction = {
           },
           serviceName: 'gmail',
           onRetry: (error, attempt) => {
-            logger.warn(`Retrying Gmail send (attempt ${attempt})`, { error: error.message });
+            logger.warn(`Retrying Gmail draft creation (attempt ${attempt})`, { error: error.message });
           },
         }
       );
       
-      logger.info('Email sent successfully', { messageId: result.data.id });
+      logger.info('Draft created successfully', { draftId: result.data.id });
       
       return {
         success: true,
         data: {
           id: result.data.id!,
-          threadId: result.data.threadId!,
-          labelIds: result.data.labelIds,
+          messageId: result.data.message?.id,
         },
       };
     } catch (error) {
-      logger.error('Failed to send email', { error });
+      logger.error('Failed to create draft', { error });
       
       return {
         success: false,
         error: {
-          code: 'SEND_EMAIL_FAILED',
+          code: 'CREATE_DRAFT_FAILED',
           message: error instanceof Error ? error.message : 'Unknown error',
         },
       };

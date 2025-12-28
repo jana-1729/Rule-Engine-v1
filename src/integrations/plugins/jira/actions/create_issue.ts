@@ -18,8 +18,8 @@ export const createIssue: IntegrationAction = {
     id: z.string().optional(),
   }),
 
-  async execute(input, context) {
-    const { credentials, logger } = context;
+  async execute(input, credentials, context) {
+    const { logger } = context;
     
     logger.info('Executing create_issue', { input });
     

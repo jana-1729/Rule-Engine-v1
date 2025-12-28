@@ -22,8 +22,8 @@ export const createChannel: IntegrationAction = {
     webUrl: z.string().optional(),
   }),
 
-  async execute(input, context) {
-    const { credentials, logger } = context;
+  async execute(input, credentials, context) {
+    const { logger } = context;
     
     logger.info('Creating Microsoft Teams channel', { input });
     
@@ -33,7 +33,7 @@ export const createChannel: IntegrationAction = {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${credentials.accessToken}`,
+            'Authorization': `Bearer ${credentials.data.accessToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({

@@ -7,10 +7,10 @@
 import OpenAI from 'openai';
 import { z } from 'zod';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
+// Initialize OpenAI client (optional - will use fallback if not configured)
+const openai = process.env.OPENAI_API_KEY ? new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-});
+}) : null;
 
 export interface FieldSchema {
   name: string;
@@ -50,6 +50,12 @@ export class AIFieldMapperService {
    * Suggest field mappings using AI
    */
   async suggestMapping(request: MappingRequest): Promise<MappingResponse> {
+    // If OpenAI is not configured, use fallback mapping
+    if (!openai) {
+      console.warn('OpenAI API key not configured, using fallback mapping');
+      return this.fallbackMapping(request);
+    }
+    
     try {
       const prompt = this.buildPrompt(request);
       

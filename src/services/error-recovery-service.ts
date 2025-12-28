@@ -234,7 +234,7 @@ export class ErrorRecoveryService {
 
         console.log(`Retry attempt ${attempt + 1}/${config.maxRetries} after ${delay}ms`, {
           errorType,
-          error: error.message,
+          error: error instanceof Error ? error.message : String(error),
         });
 
         await this.sleep(delay);

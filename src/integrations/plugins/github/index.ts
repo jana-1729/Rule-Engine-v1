@@ -1,7 +1,5 @@
 import { Integration } from '../../types';
-import { githubAuth } from './auth';
 import * as actions from './actions';
-import * as triggers from './triggers';
 
 /**
  * GitHub Integration
@@ -14,19 +12,17 @@ import * as triggers from './triggers';
  */
 const githubIntegration: Integration = {
   metadata: {
-    slug: 'github',
+    id: 'github', slug: 'github',
     name: 'GitHub',
     description: 'Connect with GitHub to automate your workflows',
     category: 'developer-tools',
     version: '1.0.0',
-    logo: '/assets/integrations/github.png',
-    color: '#181717',
+    icon: '/assets/integrations/github.png',
     website: 'https://github.com',
-    documentation: 'https://docs.github.com/en/rest',
-    requiresEndUserAuth: true,
+    authType: 'oauth2' as const, documentation: 'https://docs.github.com/en/rest',
   },
 
-  auth: githubAuth,
+  auth: { type: "oauth2", config: { authorizationUrl: "", tokenUrl: "", clientId: "", clientSecret: "", scopes: [], redirectUri: "" } },
 
   actions: {
     create_issue: actions.createIssue,
