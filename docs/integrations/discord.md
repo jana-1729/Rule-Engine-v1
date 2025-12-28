@@ -1,6 +1,6 @@
 # Discord Integration Guide
 
-![Discord](../../public/assets/integrations/discord.svg)
+![Discord](/assets/integrations/discord.webp)
 
 ## Overview
 

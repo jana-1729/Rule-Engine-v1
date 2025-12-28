@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Google Sheets](../../public/assets/integrations/google-sheets.svg)
+![Google Sheets](/assets/integrations/google-sheets.webp)
 
 ## Introduction
 

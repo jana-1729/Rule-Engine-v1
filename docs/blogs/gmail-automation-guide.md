@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Gmail Automation](../../public/assets/integrations/gmail.svg)
+![Gmail Automation](/assets/integrations/gmail.jpg)
 
 ## Introduction
 

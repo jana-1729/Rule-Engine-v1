@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Trello](../../public/assets/integrations/trello.svg)
+![Trello](/assets/integrations/trello.png)
 
 ## Introduction
 

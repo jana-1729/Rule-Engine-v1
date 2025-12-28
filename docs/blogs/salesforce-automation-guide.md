@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Salesforce](../../public/assets/integrations/salesforce.svg)
+![Salesforce](/assets/integrations/salesforce.png)
 
 ## Introduction
 

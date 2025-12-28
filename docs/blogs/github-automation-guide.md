@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![GitHub](../../public/assets/integrations/github.svg)
+![GitHub](/assets/integrations/notion.png)
 
 ## Introduction
 

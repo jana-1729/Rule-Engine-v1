@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![HubSpot](../../public/assets/integrations/hubspot.svg)
+![HubSpot](/assets/integrations/hubspot.png)
 
 ## Introduction
 

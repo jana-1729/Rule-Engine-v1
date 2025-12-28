@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Discord](../../public/assets/integrations/discord.svg)
+![Discord](/assets/integrations/discord.webp)
 
 ## Introduction
 

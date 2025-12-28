@@ -1,6 +1,6 @@
 # Slack Integration Guide
 
-![Slack](../../public/assets/integrations/slack.svg)
+![Slack](/assets/integrations/slack.jpeg)
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # HubSpot Integration Guide
 
-![HubSpot](../../public/assets/integrations/hubspot.svg)
+![HubSpot](/assets/integrations/hubspot.png)
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # Microsoft Teams Integration Guide
 
-![Microsoft Teams](../../public/assets/integrations/microsoft-teams.svg)
+![Microsoft Teams](/assets/integrations/teams.webp)
 
 ## Overview
 

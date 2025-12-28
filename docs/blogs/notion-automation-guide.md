@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Notion](../../public/assets/integrations/notion.svg)
+![Notion](/assets/integrations/notion.png)
 
 ## Introduction
 

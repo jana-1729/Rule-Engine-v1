@@ -1,6 +1,6 @@
 # Google Sheets Integration Guide
 
-![Google Sheets](../../public/assets/integrations/google-sheets.svg)
+![Google Sheets](/assets/integrations/google-sheets.webp)
 
 ## Overview
 

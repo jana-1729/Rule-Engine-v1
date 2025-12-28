@@ -1,6 +1,6 @@
 # Trello Integration Guide
 
-![Trello](../../public/assets/integrations/trello.svg)
+![Trello](/assets/integrations/trello.png)
 
 ## Overview
 

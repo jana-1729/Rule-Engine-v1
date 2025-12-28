@@ -1,6 +1,6 @@
 # Gmail Integration Guide
 
-![Gmail](../../public/assets/integrations/gmail.svg)
+![Gmail](/assets/integrations/gmail.jpg)
 
 ## Overview
 

@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Microsoft Teams](../../public/assets/integrations/microsoft-teams.svg)
+![Microsoft Teams](/assets/integrations/teams.webp)
 
 ## Introduction
 

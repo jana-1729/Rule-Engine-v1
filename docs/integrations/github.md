@@ -1,6 +1,6 @@
 # GitHub Integration Guide
 
-![GitHub](../../public/assets/integrations/github.svg)
+![GitHub](/assets/integrations/notion.png)
 
 ## Overview
 

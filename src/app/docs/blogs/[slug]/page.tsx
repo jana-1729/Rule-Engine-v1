@@ -5,8 +5,7 @@ import { notFound } from 'next/navigation';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { ArrowLeft, BookOpen } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { MarkdownRenderer } from '@/ui/components/markdown-renderer';
 
 export default async function BlogPostPage({
   params,
@@ -79,11 +78,7 @@ export default async function BlogPostPage({
 
         {/* Article */}
         <article className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 md:p-12">
-          <div className="prose prose-lg max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {content}
-            </ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={content} />
         </article>
 
         {/* CTA Section */}

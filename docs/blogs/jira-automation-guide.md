@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Jira](../../public/assets/integrations/jira.svg)
+![Jira](/assets/integrations/jira-icon.png)
 
 ## Introduction
 

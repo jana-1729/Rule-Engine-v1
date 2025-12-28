@@ -1,6 +1,6 @@
 # Jira Integration Guide
 
-![Jira](../../public/assets/integrations/jira.svg)
+![Jira](/assets/integrations/jira-icon.png)
 
 ## Overview
 

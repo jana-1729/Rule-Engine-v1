@@ -1,6 +1,6 @@
 # Notion Integration Guide
 
-![Notion](../../public/assets/integrations/notion.svg)
+![Notion](/assets/integrations/notion.png)
 
 ## Overview
 

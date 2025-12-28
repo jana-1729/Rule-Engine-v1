@@ -5,7 +5,7 @@
 **Reading Time**: 10 minutes  
 **Category**: Integration Guides
 
-![Slack](../../public/assets/integrations/slack.svg)
+![Slack](/assets/integrations/slack.jpeg)
 
 ## Introduction
 

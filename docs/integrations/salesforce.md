@@ -1,6 +1,6 @@
 # Salesforce Integration Guide
 
-![Salesforce](../../public/assets/integrations/salesforce.svg)
+![Salesforce](/assets/integrations/salesforce.png)
 
 ## Overview
 
