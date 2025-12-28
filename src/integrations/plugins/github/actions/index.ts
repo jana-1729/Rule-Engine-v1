@@ -1,2 +1,4 @@
-export { createIssue } from './create_issue';
-export { createPr } from './create_pr';
+export { createIssue } from './create-issue';
+export { createPR } from './create-pr';
+export { createBranch } from './create-branch';
+export { mergePR } from './merge-pr';

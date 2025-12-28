@@ -28,7 +28,8 @@ export type IntegrationCategory =
   | 'sales'
   | 'finance'
   | 'hr'
-  | 'developer-tools';
+  | 'developer-tools'
+  | 'project-management';
 
 export type AuthType = 'oauth2' | 'api_key' | 'basic' | 'custom' | 'none';
 
