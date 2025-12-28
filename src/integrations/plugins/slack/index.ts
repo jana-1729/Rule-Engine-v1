@@ -1,11 +1,15 @@
-import { z } from 'zod';
-import { Integration, ActionResult, ConnectionCredentials, ExecutionContext } from '../../types';
-import { BaseIntegration } from '../../base-integration';
+import { Integration } from '../../types';
+import * as actions from './actions';
 import axios from 'axios';
 
 /**
  * Slack Integration
- * Send messages, create channels, and manage Slack workspaces
+ * 
+ * Slack integration for the Rule Engine platform.
+ * Send messages, upload files, manage channels with production-ready API implementations.
+ * 
+ * @category communication
+ * @version 1.0.0
  */
 
 const metadata = {
@@ -14,227 +18,16 @@ const metadata = {
   name: 'Slack',
   description: 'Send messages and manage Slack workspaces',
   category: 'communication' as const,
-  icon: '/integrations/slack.svg',
+  icon: '/assets/integrations/slack.svg',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://slack.com',
   documentation: 'https://api.slack.com',
 };
 
-// ============================================
-// ACTIONS
-// ============================================
-
-const sendMessageAction = {
-  id: 'send_message',
-  name: 'Send Message',
-  description: 'Send a message to a Slack channel',
-  inputSchema: z.object({
-    channel: z.string().describe('Channel ID or name'),
-    text: z.string().optional().describe('Message text'),
-    blocks: z.array(z.any()).optional().describe('Block Kit blocks'),
-    thread_ts: z.string().optional().describe('Thread timestamp for replies'),
-  }),
-  outputSchema: z.object({
-    ok: z.boolean(),
-    channel: z.string(),
-    ts: z.string(),
-    message: z.any(),
-  }),
-  async execute(
-    input: any,
-    credentials: ConnectionCredentials,
-    context: ExecutionContext
-  ): Promise<ActionResult> {
-    try {
-      context.logger.info('Sending Slack message', { channel: input.channel });
-
-      const accessToken = credentials.data.accessToken;
-
-      const response = await axios.post(
-        'https://slack.com/api/chat.postMessage',
-        {
-          channel: input.channel,
-          text: input.text,
-          blocks: input.blocks,
-          thread_ts: input.thread_ts,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.data.ok) {
-        return {
-          success: false,
-          error: {
-            code: response.data.error,
-            message: `Slack API error: ${response.data.error}`,
-            details: response.data,
-          },
-        };
-      }
-
-      return {
-        success: true,
-        data: {
-          ok: response.data.ok,
-          channel: response.data.channel,
-          ts: response.data.ts,
-          message: response.data.message,
-        },
-      };
-    } catch (error: any) {
-      context.logger.error('Failed to send Slack message', error);
-      
-      return {
-        success: false,
-        error: {
-          code: error.response?.data?.error || 'UNKNOWN',
-          message: error.response?.data?.error || error.message,
-          details: error.response?.data,
-        },
-      };
-    }
-  },
-};
-
-const createChannelAction = {
-  id: 'create_channel',
-  name: 'Create Channel',
-  description: 'Create a new Slack channel',
-  inputSchema: z.object({
-    name: z.string().describe('Channel name'),
-    is_private: z.boolean().optional().default(false),
-  }),
-  outputSchema: z.object({
-    ok: z.boolean(),
-    channel: z.any(),
-  }),
-  async execute(
-    input: any,
-    credentials: ConnectionCredentials,
-    context: ExecutionContext
-  ): Promise<ActionResult> {
-    try {
-      const accessToken = credentials.data.accessToken;
-
-      const response = await axios.post(
-        'https://slack.com/api/conversations.create',
-        {
-          name: input.name,
-          is_private: input.is_private,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (!response.data.ok) {
-        return {
-          success: false,
-          error: {
-            code: response.data.error,
-            message: `Slack API error: ${response.data.error}`,
-            details: response.data,
-          },
-        };
-      }
-
-      return {
-        success: true,
-        data: {
-          ok: response.data.ok,
-          channel: response.data.channel,
-        },
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          code: error.response?.data?.error || 'UNKNOWN',
-          message: error.response?.data?.error || error.message,
-          details: error.response?.data,
-        },
-      };
-    }
-  },
-};
-
-const getUserAction = {
-  id: 'get_user',
-  name: 'Get User Info',
-  description: 'Get information about a Slack user',
-  inputSchema: z.object({
-    user: z.string().describe('User ID'),
-  }),
-  outputSchema: z.object({
-    ok: z.boolean(),
-    user: z.any(),
-  }),
-  async execute(
-    input: any,
-    credentials: ConnectionCredentials,
-    context: ExecutionContext
-  ): Promise<ActionResult> {
-    try {
-      const accessToken = credentials.data.accessToken;
-
-      const response = await axios.get(
-        'https://slack.com/api/users.info',
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          params: {
-            user: input.user,
-          },
-        }
-      );
-
-      if (!response.data.ok) {
-        return {
-          success: false,
-          error: {
-            code: response.data.error,
-            message: `Slack API error: ${response.data.error}`,
-            details: response.data,
-          },
-        };
-      }
-
-      return {
-        success: true,
-        data: {
-          ok: response.data.ok,
-          user: response.data.user,
-        },
-      };
-    } catch (error: any) {
-      return {
-        success: false,
-        error: {
-          code: error.response?.data?.error || 'UNKNOWN',
-          message: error.response?.data?.error || error.message,
-          details: error.response?.data,
-        },
-      };
-    }
-  },
-};
-
-// ============================================
-// INTEGRATION DEFINITION
-// ============================================
-
 const slackIntegration: Integration = {
   metadata,
+  
   auth: {
     type: 'oauth2',
     config: {
@@ -247,17 +40,19 @@ const slackIntegration: Integration = {
         'channels:read',
         'channels:manage',
         'users:read',
+        'files:write',
+        'reactions:write',
       ],
       redirectUri: `${process.env.NEXT_PUBLIC_APP_URL}/api/integrations/callback/slack`,
     },
-    async validate(credentials: ConnectionCredentials): Promise<boolean> {
+    async validate(credentials) {
       try {
         const response = await axios.post(
           'https://slack.com/api/auth.test',
           {},
           {
             headers: {
-              Authorization: `Bearer ${credentials.data.accessToken}`,
+              'Authorization': `Bearer ${credentials.data.accessToken}`,
             },
           }
         );
@@ -267,13 +62,15 @@ const slackIntegration: Integration = {
       }
     },
   },
+
   actions: {
-    send_message: sendMessageAction,
-    create_channel: createChannelAction,
-    get_user: getUserAction,
+    send_message: actions.sendMessage,
+    upload_file: actions.uploadFile,
+    add_reaction: actions.addReaction,
+    create_channel: actions.createChannel,
   },
+
   triggers: {},
 };
 
 export default slackIntegration;
-
