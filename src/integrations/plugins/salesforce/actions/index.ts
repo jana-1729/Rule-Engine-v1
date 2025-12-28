@@ -1,2 +1,4 @@
-export { createLead } from './create_lead';
-export { updateOpportunity } from './update_opportunity';
+export { createLead } from './create-lead';
+export { updateOpportunity } from './update-opportunity';
+export { queryRecords } from './query-records';
+export { createCase } from './create-case';

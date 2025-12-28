@@ -1,2 +1,4 @@
-export { createContact } from './create_contact';
-export { updateContact } from './update_contact';
+export { createContact } from './create-contact';
+export { updateContact } from './update-contact';
+export { createDeal } from './create-deal';
+export { addToList } from './add-to-list';
