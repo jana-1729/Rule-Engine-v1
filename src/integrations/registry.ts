@@ -93,7 +93,13 @@ export async function loadIntegrations() {
     import('./plugins/notion'),
     import('./plugins/slack'),
     import('./plugins/gmail'),
-    // Add more as they're created
+    import('./plugins/microsoft-teams'),
+    import('./plugins/discord'),
+    import('./plugins/hubspot'),
+    import('./plugins/salesforce'),
+    import('./plugins/jira'),
+    import('./plugins/github'),
+    import('./plugins/trello'),
   ];
 
   const results = await Promise.allSettled(integrationModules);
