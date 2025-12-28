@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card';
 import { Badge } from '@/ui/components/badge';
 import { Button } from '@/ui/components/button';
 import Link from 'next/link';
+import { BookOpen, FileText, ExternalLink } from 'lucide-react';
 
 export default async function IntegrationDetailPage({
   params,
@@ -105,6 +106,25 @@ export default async function IntegrationDetailPage({
               <Badge variant={integration.status === 'active' ? 'default' : 'secondary'}>
                 {integration.status}
               </Badge>
+            </div>
+            {/* Documentation Links */}
+            <div className="flex items-center gap-4 mt-3">
+              <Link 
+                href={`/docs/integrations/${integration.slug}`}
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+              >
+                <BookOpen className="w-4 h-4" />
+                Documentation
+                <ExternalLink className="w-3 h-3" />
+              </Link>
+              <Link 
+                href={`/docs/blogs/${integration.slug}-automation-guide`}
+                className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700"
+              >
+                <FileText className="w-4 h-4" />
+                How-To Guide
+                <ExternalLink className="w-3 h-3" />
+              </Link>
             </div>
           </div>
         </div>

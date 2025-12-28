@@ -1,34 +1,49 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from 'next/server';
+import { integrationRegistry, loadIntegrations } from '@/integrations/registry';
 
-export const dynamic = 'force-dynamic';
-
-export async function GET() {
+/**
+ * GET /api/integrations
+ * 
+ * Fetches all available integrations from the registry
+ */
+export async function GET(request: NextRequest) {
   try {
-    // Fetch all integrations from database
-    const integrations = await prisma.integration.findMany({
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        description: true,
-        category: true,
-        logo: true,
-        color: true,
-        authType: true,
-      },
-      orderBy: { name: 'asc' },
-    });
-
+    // Ensure integrations are loaded
+    await loadIntegrations();
+    
+    // Get all integrations from registry
+    const allIntegrations = integrationRegistry.list();
+    
+    // Transform to API format
+    const integrations = allIntegrations.map((integration) => ({
+      id: integration.metadata.id,
+      slug: integration.metadata.slug,
+      name: integration.metadata.name,
+      description: integration.metadata.description,
+      logo: integration.metadata.icon,
+      category: integration.metadata.category,
+      status: 'available',
+      version: integration.metadata.version,
+      authType: integration.metadata.authType,
+      website: integration.metadata.website,
+      documentation: integration.metadata.documentation,
+      actionsCount: Object.keys(integration.actions).length,
+      triggersCount: Object.keys(integration.triggers).length,
+    }));
+    
     return NextResponse.json({
+      success: true,
       integrations,
+      total: integrations.length,
     });
   } catch (error) {
     console.error('Failed to fetch integrations:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch integrations' },
+      {
+        success: false,
+        error: 'Failed to fetch integrations',
+      },
       { status: 500 }
     );
   }
 }
-
