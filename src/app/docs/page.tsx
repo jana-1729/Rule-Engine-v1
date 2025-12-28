@@ -230,8 +230,30 @@ export default function DocsPage() {
   }, {} as Record<string, DocItem[]>);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <Link href="/" className="flex items-center space-x-3">
+              <img src="/logo.png" alt="Rule Engine" className="w-10 h-10" />
+              <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Rule Engine
+              </span>
+            </Link>
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link href="/docs" className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors">Documentation</Link>
+              <Link href="/docs/blogs" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Blog</Link>
+              <Link href="/pricing" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Pricing</Link>
+            </nav>
+            <Link href="/" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">
+              ← Back to Home
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">

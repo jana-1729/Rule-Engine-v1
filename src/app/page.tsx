@@ -7,10 +7,6 @@ import { Badge } from '@/ui/components/badge';
 export default async function HomePage() {
   const session = await getSession();
 
-  if (session) {
-    redirect('/dashboard');
-  }
-
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -26,17 +22,28 @@ export default async function HomePage() {
             <nav className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Features</a>
               <a href="#integrations" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Integrations</a>
-              <a href="#pricing" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Pricing</a>
+              <Link href="/pricing" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Pricing</Link>
+              <Link href="/docs" className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors">Docs</Link>
             </nav>
             <div className="flex items-center space-x-4">
-              <Link href="/login">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link href="/signup">
-                <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                  Get Started
-                </Button>
-              </Link>
+              {session ? (
+                <Link href="/dashboard">
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              ) : (
+                <>
+                  <Link href="/login">
+                    <Button variant="ghost">Sign In</Button>
+                  </Link>
+                  <Link href="/signup">
+                    <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -555,7 +562,7 @@ export default async function HomePage() {
                 <h3 className="text-white font-semibold mb-4">Company</h3>
                 <ul className="space-y-2 text-sm">
                   <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                  <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
+                  <li><Link href="/docs/blogs" className="hover:text-white transition-colors">Blog</Link></li>
                   <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
                   <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
                 </ul>
