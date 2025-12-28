@@ -18,7 +18,7 @@ const metadata = {
   name: 'HubSpot',
   description: 'Connect with HubSpot CRM to automate your sales and marketing workflows',
   category: 'crm' as const,
-  icon: '/assets/integrations/hubspot.svg',
+  icon: '/assets/integrations/hubspot.png',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://www.hubspot.com',

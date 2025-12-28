@@ -18,7 +18,7 @@ const metadata = {
   name: 'Notion',
   description: 'Create pages, query databases, and manage Notion workspaces',
   category: 'productivity' as const,
-  icon: '/assets/integrations/notion.jpg',
+  icon: '/assets/integrations/notion.png',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://notion.so',

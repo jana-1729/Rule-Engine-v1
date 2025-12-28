@@ -18,7 +18,7 @@ const metadata = {
   name: 'Trello',
   description: 'Connect with Trello to automate your project management and task tracking workflows',
   category: 'project-management' as const,
-  icon: '/assets/integrations/trello.svg',
+  icon: '/assets/integrations/trello.png',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://trello.com',

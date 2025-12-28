@@ -18,7 +18,7 @@ const metadata = {
   name: 'Google Sheets',
   description: 'Read, write, and manage Google Sheets',
   category: 'productivity' as const,
-  icon: '/assets/integrations/google-sheets.jpg',
+  icon: '/assets/integrations/google-sheets.webp',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://sheets.google.com',

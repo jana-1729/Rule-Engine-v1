@@ -18,7 +18,7 @@ const metadata = {
   name: 'Salesforce',
   description: 'Connect with Salesforce CRM to automate your enterprise sales workflows',
   category: 'crm' as const,
-  icon: '/assets/integrations/salesforce.svg',
+  icon: '/assets/integrations/salesforce.png',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://www.salesforce.com',

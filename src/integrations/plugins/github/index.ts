@@ -18,7 +18,7 @@ const metadata = {
   name: 'GitHub',
   description: 'Connect with GitHub to automate your development workflows and code management',
   category: 'developer-tools' as const,
-  icon: '/assets/integrations/github.svg',
+  icon: '/assets/integrations/notion.png', // TODO: Add github.png
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://github.com',

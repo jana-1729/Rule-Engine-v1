@@ -18,7 +18,7 @@ const metadata = {
   name: 'Slack',
   description: 'Send messages and manage Slack workspaces',
   category: 'communication' as const,
-  icon: '/assets/integrations/slack.svg',
+  icon: '/assets/integrations/slack.jpeg',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://slack.com',

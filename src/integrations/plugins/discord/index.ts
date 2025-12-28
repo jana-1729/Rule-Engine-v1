@@ -18,7 +18,7 @@ const metadata = {
   name: 'Discord',
   description: 'Connect with Discord to automate your community workflows',
   category: 'communication' as const,
-  icon: '/assets/integrations/discord.svg',
+  icon: '/assets/integrations/discord.webp',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://discord.com',

@@ -18,7 +18,7 @@ const metadata = {
   name: 'Jira',
   description: 'Connect with Jira to automate your project management and issue tracking workflows',
   category: 'project-management' as const,
-  icon: '/assets/integrations/jira.svg',
+  icon: '/assets/integrations/jira-icon.png',
   version: '1.0.0',
   authType: 'oauth2' as const,
   website: 'https://www.atlassian.com/software/jira',
