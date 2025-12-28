@@ -4,44 +4,46 @@ import { errorRecovery } from '@/services/error-recovery-service';
 import axios from 'axios';
 
 /**
- * Send Message Action for Discord
+ * Create Webhook Action for Discord
  * 
- * Sends a message to a Discord channel
- * Supports text, embeds, and mentions
+ * Creates a webhook for a Discord channel
+ * Webhooks allow external services to post messages
  */
-export const sendMessage: IntegrationAction = {
-  id: 'send_message',
-  name: 'Send Message',
-  description: 'Send a message to a Discord channel',
+export const createWebhook: IntegrationAction = {
+  id: 'create_webhook',
+  name: 'Create Webhook',
+  description: 'Create a webhook for a Discord channel',
   
   inputSchema: z.object({
     channelId: z.string().describe('Channel ID'),
-    content: z.string().describe('Message content'),
-    embeds: z.array(z.any()).optional().describe('Message embeds (optional)'),
-    tts: z.boolean().optional().default(false).describe('Text-to-speech'),
+    name: z.string().describe('Webhook name'),
+    avatar: z.string().url().optional().describe('Webhook avatar URL (optional)'),
   }),
 
   outputSchema: z.object({
     success: z.boolean(),
     id: z.string().optional(),
-    timestamp: z.string().optional(),
+    url: z.string().optional(),
+    token: z.string().optional(),
   }),
 
   async execute(input, credentials, context) {
     const { logger } = context;
     
-    logger.info('Sending message to Discord', { channelId: input.channelId });
+    logger.info('Creating Discord webhook', { 
+      channelId: input.channelId,
+      name: input.name
+    });
     
     try {
-      // Send message with automatic retry
+      // Create webhook with automatic retry
       const result = await errorRecovery.executeWithRetry(
         async () => {
           return await axios.post(
-            `https://discord.com/api/v10/channels/${input.channelId}/messages`,
+            `https://discord.com/api/v10/channels/${input.channelId}/webhooks`,
             {
-              content: input.content,
-              embeds: input.embeds,
-              tts: input.tts,
+              name: input.name,
+              avatar: input.avatar,
             },
             {
               headers: {
@@ -57,14 +59,16 @@ export const sendMessage: IntegrationAction = {
           },
           serviceName: 'discord',
           onRetry: (error, attempt) => {
-            logger.warn(`Retrying Discord message send (attempt ${attempt})`, { error: error.message });
+            logger.warn(`Retrying Discord webhook creation (attempt ${attempt})`, { error: error.message });
           },
         }
       );
       
-      logger.info('Message sent successfully', { 
-        messageId: result.data.id,
-        timestamp: result.data.timestamp
+      const webhookUrl = `https://discord.com/api/webhooks/${result.data.id}/${result.data.token}`;
+      
+      logger.info('Webhook created successfully', { 
+        webhookId: result.data.id,
+        webhookUrl
       });
       
       return {
@@ -72,19 +76,21 @@ export const sendMessage: IntegrationAction = {
         data: {
           success: true,
           id: result.data.id,
-          timestamp: result.data.timestamp,
+          url: webhookUrl,
+          token: result.data.token,
         },
       };
     } catch (error) {
-      logger.error('Failed to send message to Discord', { error });
+      logger.error('Failed to create Discord webhook', { error });
       
       return {
         success: false,
         error: {
-          code: 'SEND_MESSAGE_FAILED',
+          code: 'CREATE_WEBHOOK_FAILED',
           message: error instanceof Error ? error.message : 'Unknown error',
         },
       };
     }
   },
 };
+

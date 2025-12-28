@@ -4,21 +4,20 @@ import { Client } from '@microsoft/microsoft-graph-client';
 import { errorRecovery } from '@/services/error-recovery-service';
 
 /**
- * Send Message Action for Microsoft Teams
+ * Send Adaptive Card Action for Microsoft Teams
  * 
- * Sends a message to a Teams channel using Microsoft Graph SDK
- * Supports rich text formatting, mentions, and attachments
+ * Sends an interactive Adaptive Card to a Teams channel
+ * Supports buttons, forms, images, and rich interactions
  */
-export const sendMessage: IntegrationAction = {
-  id: 'send_message',
-  name: 'Send Message',
-  description: 'Send a message to a Microsoft Teams channel',
+export const sendAdaptiveCard: IntegrationAction = {
+  id: 'send_adaptive_card',
+  name: 'Send Adaptive Card',
+  description: 'Send an interactive Adaptive Card to a Microsoft Teams channel',
   
   inputSchema: z.object({
     teamId: z.string().describe('Team ID'),
     channelId: z.string().describe('Channel ID'),
-    message: z.string().describe('Message content'),
-    contentType: z.enum(['text', 'html']).optional().default('text').describe('Content type'),
+    card: z.record(z.any()).describe('Adaptive Card JSON schema'),
     subject: z.string().optional().describe('Message subject (optional)'),
   }),
 
@@ -31,7 +30,7 @@ export const sendMessage: IntegrationAction = {
   async execute(input, credentials, context) {
     const { logger } = context;
     
-    logger.info('Sending message to Microsoft Teams', { 
+    logger.info('Sending Adaptive Card to Microsoft Teams', { 
       teamId: input.teamId,
       channelId: input.channelId
     });
@@ -44,17 +43,24 @@ export const sendMessage: IntegrationAction = {
         },
       });
 
-      // Send message with automatic retry
+      // Send adaptive card with automatic retry
       const result = await errorRecovery.executeWithRetry(
         async () => {
           return await client
             .api(`/teams/${input.teamId}/channels/${input.channelId}/messages`)
             .post({
               body: {
-                contentType: input.contentType,
-                content: input.message,
+                contentType: 'html',
+                content: '<attachment id="1"></attachment>',
               },
               subject: input.subject,
+              attachments: [
+                {
+                  id: '1',
+                  contentType: 'application/vnd.microsoft.card.adaptive',
+                  content: JSON.stringify(input.card),
+                },
+              ],
             });
         },
         {
@@ -63,12 +69,12 @@ export const sendMessage: IntegrationAction = {
           },
           serviceName: 'microsoft-teams',
           onRetry: (error, attempt) => {
-            logger.warn(`Retrying Teams message send (attempt ${attempt})`, { error: error.message });
+            logger.warn(`Retrying Teams adaptive card send (attempt ${attempt})`, { error: error.message });
           },
         }
       );
       
-      logger.info('Message sent successfully', { 
+      logger.info('Adaptive Card sent successfully', { 
         messageId: result.id,
         timestamp: result.createdDateTime
       });
@@ -82,15 +88,16 @@ export const sendMessage: IntegrationAction = {
         },
       };
     } catch (error) {
-      logger.error('Failed to send message to Teams', { error });
+      logger.error('Failed to send Adaptive Card to Teams', { error });
       
       return {
         success: false,
         error: {
-          code: 'SEND_MESSAGE_FAILED',
+          code: 'SEND_ADAPTIVE_CARD_FAILED',
           message: error instanceof Error ? error.message : 'Unknown error',
         },
       };
     }
   },
 };
+

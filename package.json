@@ -28,8 +28,10 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^0.0.24",
+    "@azure/identity": "^4.10.1",
     "@google-cloud/local-auth": "^3.0.1",
     "@hookform/resolvers": "^3.3.4",
+    "@microsoft/microsoft-graph-client": "^3.0.7",
     "@notionhq/client": "^5.6.0",
     "@prisma/client": "^5.9.0",
     "@radix-ui/react-accordion": "^1.1.2",
@@ -63,6 +65,7 @@
     "clsx": "^2.1.0",
     "cmdk": "^0.2.0",
     "date-fns": "^3.3.0",
+    "discord.js": "^14.25.1",
     "googleapis": "^169.0.0",
     "ioredis": "^5.3.2",
     "jose": "^5.2.0",
