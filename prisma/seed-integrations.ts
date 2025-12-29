@@ -552,7 +552,7 @@ async function main() {
       name: 'Salesforce',
       description: 'Connect with Salesforce CRM to automate your workflows',
       category: 'crm',
-      logo: '/assets/integrations/salesforce.webp',
+      logo: '/assets/integrations/salesforce.png',
       authType: 'oauth2',
       authConfig: {
         type: 'oauth2',
@@ -571,7 +571,7 @@ async function main() {
       name: 'Salesforce',
       description: 'Connect with Salesforce CRM to automate your workflows',
       category: 'crm',
-      logo: '/assets/integrations/salesforce.webp',
+      logo: '/assets/integrations/salesforce.png',
       authType: 'oauth2',
       authConfig: {
         type: 'oauth2',
@@ -602,7 +602,7 @@ async function main() {
       name: 'Jira',
       description: 'Connect with Jira to automate your project management',
       category: 'project-management',
-      logo: '/assets/integrations/jira.png',
+      logo: '/assets/integrations/jira-icon.png',
       authType: 'oauth2',
       authConfig: {
         type: 'oauth2',
@@ -621,7 +621,7 @@ async function main() {
       name: 'Jira',
       description: 'Connect with Jira to automate your project management',
       category: 'project-management',
-      logo: '/assets/integrations/jira.png',
+      logo: '/assets/integrations/jira-icon.png',
       authType: 'oauth2',
       authConfig: {
         type: 'oauth2',
@@ -702,7 +702,7 @@ async function main() {
       name: 'Trello',
       description: 'Connect with Trello to automate your project management',
       category: 'project-management',
-      logo: '/assets/integrations/trello.webp',
+      logo: '/assets/integrations/trello.png',
       authType: 'api_key',
       authConfig: {
         type: 'api_key',
@@ -719,7 +719,7 @@ async function main() {
       name: 'Trello',
       description: 'Connect with Trello to automate your project management',
       category: 'project-management',
-      logo: '/assets/integrations/trello.webp',
+      logo: '/assets/integrations/trello.png',
       authType: 'api_key',
       authConfig: {
         type: 'api_key',

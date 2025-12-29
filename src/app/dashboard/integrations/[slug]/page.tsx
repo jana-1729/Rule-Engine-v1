@@ -86,7 +86,7 @@ export default async function IntegrationDetailPage({
     <div className="space-y-8">
       {/* Header */}
       <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-start space-x-4">
           <div className="w-16 h-16 bg-white border border-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-md">
             {integration.logo ? (
               <img 
