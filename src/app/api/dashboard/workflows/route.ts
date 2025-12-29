@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('📥 Received workflow data:', JSON.stringify(body, null, 2));
+    
     const data = createWorkflowSchema.parse(body);
+    console.log('✅ Validated data:', JSON.stringify(data, null, 2));
 
     // Verify app belongs to this account
     const app = await prisma.app.findFirst({
@@ -39,23 +42,34 @@ export async function POST(request: NextRequest) {
     });
 
     if (!app) {
+      console.error('❌ App not found:', data.appId);
       return NextResponse.json(
         { error: 'App not found or unauthorized' },
         { status: 404 }
       );
     }
+    console.log('✅ App found:', app.id);
 
     // Verify integration exists
+    console.log('🔍 Looking for integration with ID:', data.integrationId);
     const integration = await prisma.integration.findUnique({
       where: { id: data.integrationId },
     });
 
     if (!integration) {
+      console.error('❌ Integration not found with ID:', data.integrationId);
+      console.log('🔍 Checking all integrations...');
+      const allIntegrations = await prisma.integration.findMany({
+        select: { id: true, slug: true, name: true },
+      });
+      console.log('Available integrations:', JSON.stringify(allIntegrations, null, 2));
+      
       return NextResponse.json(
         { error: 'Integration not found. Please ensure the integration is properly configured.' },
         { status: 404 }
       );
     }
+    console.log('✅ Integration found:', integration.slug);
 
     // Create workflow
     const workflow = await prisma.workflow.create({

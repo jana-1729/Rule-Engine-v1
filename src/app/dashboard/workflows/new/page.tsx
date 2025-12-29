@@ -81,12 +81,19 @@ export default function NewWorkflowPage() {
 
       if (appsRes.ok) {
         const appsData = await appsRes.json();
+        console.log('📦 Apps loaded:', appsData.apps?.length || 0);
         setApps(appsData.apps || []);
+      } else {
+        console.error('❌ Failed to fetch apps:', appsRes.status);
       }
 
       if (integrationsRes.ok) {
         const integrationsData = await integrationsRes.json();
+        console.log('📦 Integrations loaded:', integrationsData.integrations?.length || 0);
+        console.log('📦 Integration IDs:', integrationsData.integrations?.map((i: any) => ({ slug: i.slug, id: i.id })));
         setIntegrations(integrationsData.integrations || []);
+      } else {
+        console.error('❌ Failed to fetch integrations:', integrationsRes.status);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -172,11 +179,23 @@ export default function NewWorkflowPage() {
 
     setSaving(true);
     try {
+      const foundIntegration = integrations.find(i => i.slug === selectedIntegration);
+      
+      console.log('🔍 Debug - Selected Integration:', selectedIntegration);
+      console.log('🔍 Debug - Found Integration:', foundIntegration);
+      console.log('🔍 Debug - All Integrations:', integrations);
+      
+      if (!foundIntegration?.id) {
+        setErrors({ submit: 'Integration not found. Please select a valid integration.' });
+        setSaving(false);
+        return;
+      }
+
       const workflow = {
         name: workflowName,
         description: workflowDescription,
         appId: selectedApp,
-        integrationId: integrations.find(i => i.slug === selectedIntegration)?.id,
+        integrationId: foundIntegration.id,
         definition: {
           version: '1.0',
           action: selectedAction,
@@ -185,6 +204,8 @@ export default function NewWorkflowPage() {
         },
         enabled: false, // Start as disabled
       };
+
+      console.log('📤 Sending workflow data:', workflow);
 
       const response = await fetch('/api/dashboard/workflows', {
         method: 'POST',
@@ -196,6 +217,7 @@ export default function NewWorkflowPage() {
         router.push('/dashboard/workflows');
       } else {
         const data = await response.json();
+        console.error('❌ Workflow creation failed:', data);
         setErrors({ submit: data.error || 'Failed to create workflow' });
       }
     } catch (error) {
@@ -222,14 +244,7 @@ export default function NewWorkflowPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+          
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Create Workflow</h1>
             <p className="text-gray-600 mt-1">
@@ -237,6 +252,14 @@ export default function NewWorkflowPage() {
             </p>
           </div>
         </div>
+        <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
       </div>
 
       {/* Progress Steps */}

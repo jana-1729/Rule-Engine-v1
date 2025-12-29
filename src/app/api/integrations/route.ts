@@ -1,40 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { integrationRegistry, loadIntegrations } from '@/integrations/registry';
+import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/integrations
  * 
- * Fetches all available integrations from the registry
+ * Fetches all available integrations from the database
  */
 export async function GET(request: NextRequest) {
   try {
-    // Ensure integrations are loaded
-    await loadIntegrations();
-    
-    // Get all integrations from registry
-    const allIntegrations = integrationRegistry.list();
+    // Get all integrations from database
+    const integrations = await prisma.integration.findMany({
+      where: {
+        status: 'available',
+      },
+      orderBy: [
+        { category: 'asc' },
+        { name: 'asc' },
+      ],
+    });
     
     // Transform to API format
-    const integrations = allIntegrations.map((integration) => ({
-      id: integration.metadata.id,
-      slug: integration.metadata.slug,
-      name: integration.metadata.name,
-      description: integration.metadata.description,
-      logo: integration.metadata.icon,
-      category: integration.metadata.category,
-      status: 'available',
-      version: integration.metadata.version,
-      authType: integration.metadata.authType,
-      website: integration.metadata.website,
-      documentation: integration.metadata.documentation,
-      actionsCount: Object.keys(integration.actions).length,
-      triggersCount: Object.keys(integration.triggers).length,
-    }));
+    const formattedIntegrations = integrations.map((integration) => {
+      const actions = integration.actions as any;
+      const triggers = integration.triggers as any;
+      
+      return {
+        id: integration.id,
+        slug: integration.slug,
+        name: integration.name,
+        description: integration.description || '',
+        logo: integration.logo || '',
+        category: integration.category,
+        status: integration.status,
+        version: integration.version,
+        authType: integration.authType,
+        website: integration.website || '',
+        actionsCount: actions ? Object.keys(actions).length : 0,
+        triggersCount: triggers ? Object.keys(triggers).length : 0,
+      };
+    });
     
     return NextResponse.json({
       success: true,
-      integrations,
-      total: integrations.length,
+      integrations: formattedIntegrations,
+      total: formattedIntegrations.length,
     });
   } catch (error) {
     console.error('Failed to fetch integrations:', error);
