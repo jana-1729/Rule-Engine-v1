@@ -45,6 +45,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify integration exists
+    const integration = await prisma.integration.findUnique({
+      where: { id: data.integrationId },
+    });
+
+    if (!integration) {
+      return NextResponse.json(
+        { error: 'Integration not found. Please ensure the integration is properly configured.' },
+        { status: 404 }
+      );
+    }
+
     // Create workflow
     const workflow = await prisma.workflow.create({
       data: {

@@ -16,7 +16,8 @@ import {
   ChevronDown,
   ChevronRight,
   Package,
-  FileCode
+  FileCode,
+  Sparkles
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -62,6 +63,12 @@ const navigation: NavSection[] = [
         name: 'Executions',
         href: '/dashboard/executions',
         icon: <Activity className="w-5 h-5" />,
+      },
+      {
+        name: 'AI Features',
+        href: '/dashboard/ai-demo',
+        icon: <Sparkles className="w-5 h-5" />,
+        badge: 'NEW',
       },
     ],
   },

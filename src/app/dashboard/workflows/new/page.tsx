@@ -397,6 +397,8 @@ export default function NewWorkflowPage() {
           mappings={fieldMappings}
           onMappingsChange={setFieldMappings}
           errors={errors}
+          integrationName={selectedIntegrationData?.name || ''}
+          actionId={selectedAction}
         />
       )}
 

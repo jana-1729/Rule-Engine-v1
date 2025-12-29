@@ -545,8 +545,201 @@ async function main() {
 
   console.log('✅ HubSpot integration created/updated:', hubspot.id);
 
-  // Salesforce, Jira, GitHub, Trello integrations follow similar pattern...
-  // Adding abbreviated versions for brevity
+  // Salesforce Integration
+  const salesforce = await prisma.integration.upsert({
+    where: { slug: 'salesforce' },
+    update: {
+      name: 'Salesforce',
+      description: 'Connect with Salesforce CRM to automate your workflows',
+      category: 'crm',
+      logo: '/assets/integrations/salesforce.webp',
+      authType: 'oauth2',
+      authConfig: {
+        type: 'oauth2',
+        authorizationUrl: 'https://login.salesforce.com/services/oauth2/authorize',
+        tokenUrl: 'https://login.salesforce.com/services/oauth2/token',
+        scopes: ['api', 'refresh_token'],
+      },
+      
+      status: 'available',
+      version: '1.0.0',
+      requiresEndUserAuth: true,
+      requiresAppAuth: false,
+    },
+    create: {
+      slug: 'salesforce',
+      name: 'Salesforce',
+      description: 'Connect with Salesforce CRM to automate your workflows',
+      category: 'crm',
+      logo: '/assets/integrations/salesforce.webp',
+      authType: 'oauth2',
+      authConfig: {
+        type: 'oauth2',
+        authorizationUrl: 'https://login.salesforce.com/services/oauth2/authorize',
+        tokenUrl: 'https://login.salesforce.com/services/oauth2/token',
+        scopes: ['api', 'refresh_token'],
+      },
+      actions: {
+        create_lead: { id: 'create_lead', name: 'Create Lead', description: 'Create a new lead in Salesforce' },
+        update_opportunity: { id: 'update_opportunity', name: 'Update Opportunity', description: 'Update an opportunity' },
+        query_records: { id: 'query_records', name: 'Query Records', description: 'Query Salesforce records' },
+        create_case: { id: 'create_case', name: 'Create Case', description: 'Create a support case' },
+      },
+      
+      status: 'available',
+      version: '1.0.0',
+      requiresEndUserAuth: true,
+      requiresAppAuth: false,
+    },
+  });
+
+  console.log('✅ Salesforce integration created/updated:', salesforce.id);
+
+  // Jira Integration
+  const jira = await prisma.integration.upsert({
+    where: { slug: 'jira' },
+    update: {
+      name: 'Jira',
+      description: 'Connect with Jira to automate your project management',
+      category: 'project-management',
+      logo: '/assets/integrations/jira.png',
+      authType: 'oauth2',
+      authConfig: {
+        type: 'oauth2',
+        authorizationUrl: 'https://auth.atlassian.com/authorize',
+        tokenUrl: 'https://auth.atlassian.com/oauth/token',
+        scopes: ['read:jira-work', 'write:jira-work'],
+      },
+      
+      status: 'available',
+      version: '1.0.0',
+      requiresEndUserAuth: true,
+      requiresAppAuth: false,
+    },
+    create: {
+      slug: 'jira',
+      name: 'Jira',
+      description: 'Connect with Jira to automate your project management',
+      category: 'project-management',
+      logo: '/assets/integrations/jira.png',
+      authType: 'oauth2',
+      authConfig: {
+        type: 'oauth2',
+        authorizationUrl: 'https://auth.atlassian.com/authorize',
+        tokenUrl: 'https://auth.atlassian.com/oauth/token',
+        scopes: ['read:jira-work', 'write:jira-work'],
+      },
+      actions: {
+        create_issue: { id: 'create_issue', name: 'Create Issue', description: 'Create a new Jira issue' },
+        update_issue: { id: 'update_issue', name: 'Update Issue', description: 'Update an existing issue' },
+        add_comment: { id: 'add_comment', name: 'Add Comment', description: 'Add a comment to an issue' },
+        search_issues: { id: 'search_issues', name: 'Search Issues', description: 'Search for issues using JQL' },
+      },
+      
+      status: 'available',
+      version: '1.0.0',
+      requiresEndUserAuth: true,
+      requiresAppAuth: false,
+    },
+  });
+
+  console.log('✅ Jira integration created/updated:', jira.id);
+
+  // GitHub Integration
+  const github = await prisma.integration.upsert({
+    where: { slug: 'github' },
+    update: {
+      name: 'GitHub',
+      description: 'Connect with GitHub to automate your development workflows',
+      category: 'developer-tools',
+      logo: '/assets/integrations/notion.png',
+      authType: 'oauth2',
+      authConfig: {
+        type: 'oauth2',
+        authorizationUrl: 'https://github.com/login/oauth/authorize',
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+        scopes: ['repo', 'user'],
+      },
+      
+      status: 'available',
+      version: '1.0.0',
+      requiresEndUserAuth: true,
+      requiresAppAuth: false,
+    },
+    create: {
+      slug: 'github',
+      name: 'GitHub',
+      description: 'Connect with GitHub to automate your development workflows',
+      category: 'developer-tools',
+      logo: '/assets/integrations/notion.png',
+      authType: 'oauth2',
+      authConfig: {
+        type: 'oauth2',
+        authorizationUrl: 'https://github.com/login/oauth/authorize',
+        tokenUrl: 'https://github.com/login/oauth/access_token',
+        scopes: ['repo', 'user'],
+      },
+      actions: {
+        create_issue: { id: 'create_issue', name: 'Create Issue', description: 'Create a new GitHub issue' },
+        create_pr: { id: 'create_pr', name: 'Create Pull Request', description: 'Create a pull request' },
+        create_branch: { id: 'create_branch', name: 'Create Branch', description: 'Create a new branch' },
+        merge_pr: { id: 'merge_pr', name: 'Merge Pull Request', description: 'Merge a pull request' },
+      },
+      
+      status: 'available',
+      version: '1.0.0',
+      requiresEndUserAuth: true,
+      requiresAppAuth: false,
+    },
+  });
+
+  console.log('✅ GitHub integration created/updated:', github.id);
+
+  // Trello Integration
+  const trello = await prisma.integration.upsert({
+    where: { slug: 'trello' },
+    update: {
+      name: 'Trello',
+      description: 'Connect with Trello to automate your project management',
+      category: 'project-management',
+      logo: '/assets/integrations/trello.webp',
+      authType: 'api_key',
+      authConfig: {
+        type: 'api_key',
+        fields: ['apiKey', 'apiToken'],
+      },
+      
+      status: 'available',
+      version: '1.0.0',
+      requiresEndUserAuth: true,
+      requiresAppAuth: false,
+    },
+    create: {
+      slug: 'trello',
+      name: 'Trello',
+      description: 'Connect with Trello to automate your project management',
+      category: 'project-management',
+      logo: '/assets/integrations/trello.webp',
+      authType: 'api_key',
+      authConfig: {
+        type: 'api_key',
+        fields: ['apiKey', 'apiToken'],
+      },
+      actions: {
+        create_card: { id: 'create_card', name: 'Create Card', description: 'Create a new Trello card' },
+        update_card: { id: 'update_card', name: 'Update Card', description: 'Update a card' },
+        add_checklist: { id: 'add_checklist', name: 'Add Checklist', description: 'Add a checklist to a card' },
+        move_card: { id: 'move_card', name: 'Move Card', description: 'Move a card to another list' },
+      },
+      
+      status: 'available',
+      version: '1.0.0',
+      requiresEndUserAuth: true,
+      requiresAppAuth: false,
+    },
+  });
+
+  console.log('✅ Trello integration created/updated:', trello.id);
 
   console.log('\n🎉 Seeding completed successfully!');
   console.log('\nIntegrations added:');
@@ -558,9 +751,9 @@ async function main() {
   console.log('  - Discord (communication)');
   console.log('  - HubSpot (crm)');
   console.log('  - Salesforce (crm)');
-  console.log('  - Jira (developer-tools)');
+  console.log('  - Jira (project-management)');
   console.log('  - GitHub (developer-tools)');
-  console.log('  - Trello (productivity)');
+  console.log('  - Trello (project-management)');
 }
 
 main()

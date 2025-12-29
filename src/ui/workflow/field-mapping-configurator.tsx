@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/ui/components/card';
 import { Button } from '@/ui/components/button';
 import { Badge } from '@/ui/components/badge';
+import { AIMappingButton } from '@/ui/components/ai-mapping-button';
 import { 
   Zap, 
   Info, 
@@ -32,6 +33,8 @@ interface FieldMappingConfiguratorProps {
   mappings: Record<string, string>;
   onMappingsChange: (mappings: Record<string, string>) => void;
   errors?: Record<string, string>;
+  integrationName?: string;
+  actionId?: string;
 }
 
 export function FieldMappingConfigurator({
@@ -41,9 +44,12 @@ export function FieldMappingConfigurator({
   mappings,
   onMappingsChange,
   errors = {},
+  integrationName = '',
+  actionId = '',
 }: FieldMappingConfiguratorProps) {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(true);
+  const [showAIPanel, setShowAIPanel] = useState(false);
 
   const handleFieldChange = (fieldName: string, value: string) => {
     onMappingsChange({
@@ -142,11 +148,63 @@ export function FieldMappingConfigurator({
         </Card>
       )}
 
+      {/* AI-Powered Field Mapping */}
+      <Card className="border-purple-200 bg-gradient-to-br from-purple-50/50 to-blue-50/50">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              <CardTitle className="text-base">AI-Powered Field Mapping</CardTitle>
+              <Badge variant="secondary" className="bg-purple-100 text-purple-700 text-xs">
+                NEW
+              </Badge>
+            </div>
+            <AIMappingButton
+              sourceSchema={fields.reduce((acc, field) => ({
+                ...acc,
+                [field.name]: { type: field.type, description: field.description }
+              }), {})}
+              targetSchema={fields.reduce((acc, field) => ({
+                ...acc,
+                [field.name]: { type: field.type, description: field.description }
+              }), {})}
+              context={`Mapping fields for ${actionName} in ${integrationName}`}
+              onMappingGenerated={(suggestions) => {
+                // Apply AI suggestions to field mappings
+                const newMappings = { ...mappings };
+                suggestions.mappings.forEach((mapping: any) => {
+                  if (mapping.sourceField && mapping.targetField) {
+                    newMappings[mapping.targetField] = `{{${mapping.sourceField}}}`;
+                  }
+                });
+                onMappingsChange(newMappings);
+                setShowAIPanel(true);
+              }}
+            />
+          </div>
+          <CardDescription>
+            Let AI intelligently suggest field mappings based on field names and types
+          </CardDescription>
+        </CardHeader>
+        {showAIPanel && (
+          <CardContent>
+            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 text-green-800">
+                <Check className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  AI suggestions applied! Review the mappings below and adjust as needed.
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
       {/* Common Templates */}
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-yellow-500" />
+            <Code className="h-5 w-5 text-gray-500" />
             <CardTitle className="text-base">Quick Templates</CardTitle>
           </div>
           <CardDescription>

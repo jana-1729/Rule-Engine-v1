@@ -30,6 +30,7 @@
     "@ai-sdk/openai": "^0.0.24",
     "@azure/identity": "^4.10.1",
     "@google-cloud/local-auth": "^3.0.1",
+    "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^3.3.4",
     "@hubspot/api-client": "^13.4.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
@@ -98,7 +99,7 @@
     "tailwindcss-animate": "^1.0.7",
     "trello": "^0.11.0",
     "zod": "^3.22.4",
-    "zod-to-json-schema": "^3.25.0"
+    "zod-to-json-schema": "^3.25.1"
   },
   "devDependencies": {
     "@jest/globals": "^30.2.0",
@@ -127,7 +128,8 @@
     "tailwindcss": "^3.4.1",
     "ts-jest": "^29.4.6",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=18.0.0"

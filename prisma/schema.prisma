@@ -495,3 +495,40 @@ model ApiKeyVersion {
   @@map("api_key_versions")
 }
 
+// ============================================
+// AI SERVICES - Schema Cache & AI Usage
+// ============================================
+
+model SchemaCache {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  integration String
+  action      String
+  schema      String   @db.Text
+  metadata    String   @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([integration])
+  @@index([action])
+  @@map("schema_cache")
+}
+
+model AIUsage {
+  id        String   @id @default(cuid())
+  feature   String   // field_mapping, error_classification, workflow_generation, etc.
+  tokens    Int
+  cost      Float
+  
+  // Optional: track per account
+  accountId String?
+  
+  createdAt DateTime @default(now())
+  
+  @@index([feature])
+  @@index([accountId])
+  @@index([createdAt])
+  @@map("ai_usage")
+}
+
