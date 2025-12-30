@@ -1,78 +1,93 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { integrationSchemaService } from '@/services/integration-schema-service';
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * GET /api/integrations/[slug]/actions/[actionId]/schema
+ * 
+ * Fetch dynamic schema for a specific action from the integration plugin
+ * This endpoint converts Zod schemas to JSON format for the frontend
+ * 
+ * Query params:
+ * - context: Optional JSON context for dynamic fields
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { slug: string; actionId: string } }
 ) {
+  const startTime = Date.now();
+  
   try {
     const { slug, actionId } = params;
-
-    // Fetch integration from database
-    const integration = await prisma.integration.findUnique({
-      where: { slug },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        actions: true,
-      },
-    });
-
-    if (!integration) {
-      return NextResponse.json(
-        { error: 'Integration not found' },
-        { status: 404 }
-      );
+    const { searchParams } = new URL(request.url);
+    
+    // Parse optional context for dynamic fields
+    let context: Record<string, any> | undefined;
+    const contextParam = searchParams.get('context');
+    if (contextParam) {
+      try {
+        context = JSON.parse(contextParam);
+      } catch (error) {
+        console.warn('[API] Invalid context parameter:', error);
+      }
     }
 
-    // Parse actions from JSON
-    const actions = integration.actions ? 
-      (typeof integration.actions === 'string' ? 
-        JSON.parse(integration.actions) : integration.actions) : 
-      {};
+    // Fetch dynamic schema from integration plugin
+    const schema = await integrationSchemaService.getActionSchema(
+      slug,
+      actionId,
+      context
+    );
 
-    // Find the specific action
-    const action = actions[actionId];
+    const duration = Date.now() - startTime;
 
-    if (!action) {
-      return NextResponse.json(
-        { error: 'Action not found' },
-        { status: 404 }
-      );
-    }
-
-    // Extract fields from the action definition
-    const fields = action.fields || [];
-
-    // Build schema from fields
-    const schema = {
-      id: action.id || actionId,
-      name: action.name || actionId,
-      description: action.description || '',
-      fields: fields.map((field: any) => ({
-        name: field.name,
-        type: field.type || 'string',
-        label: field.label || field.name,
-        description: field.description || '',
-        required: field.required || false,
-        placeholder: field.placeholder || '',
-        default: field.default,
-        options: field.options,
-      })),
-    };
+    console.info(`[API] Fetched schema for ${slug}.${actionId} with ${schema.fields.length} fields in ${duration}ms`);
 
     return NextResponse.json({
       success: true,
-      schema,
+      data: {
+        schema,
+      },
+      meta: {
+        duration,
+        timestamp: new Date().toISOString(),
+        source: 'plugin', // Indicates schema is from plugin Zod definition
+        cached: duration < 10, // Quick response indicates cache hit
+      },
     });
-  } catch (error) {
-    console.error('Failed to fetch action schema:', error);
+  } catch (error: any) {
+    const duration = Date.now() - startTime;
+    console.error('[API] Failed to fetch action schema:', error);
+
+    let statusCode = 500;
+    let errorCode = 'INTERNAL_ERROR';
+
+    if (error.message.includes('not found in registry')) {
+      statusCode = 404;
+      errorCode = 'INTEGRATION_NOT_FOUND';
+    } else if (error.message.includes('Action') && error.message.includes('not found')) {
+      statusCode = 404;
+      errorCode = 'ACTION_NOT_FOUND';
+    } else if (error.message.includes('No input schema')) {
+      statusCode = 500;
+      errorCode = 'SCHEMA_NOT_DEFINED';
+    }
+
     return NextResponse.json(
-      { error: 'Failed to fetch action schema' },
-      { status: 500 }
+      { 
+        success: false,
+        error: {
+          code: errorCode,
+          message: error.message || 'Failed to fetch action schema',
+          details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+        },
+        meta: {
+          duration,
+          timestamp: new Date().toISOString(),
+        },
+      },
+      { status: statusCode }
     );
   }
 }

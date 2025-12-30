@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { IntegrationSelector } from '@/ui/workflow/integration-selector';
 import { ActionConfigurator } from '@/ui/workflow/action-configurator';
-import { FieldMappingConfigurator } from '@/ui/workflow/field-mapping-configurator';
+import { DynamicFieldGroup } from '@/ui/workflow/dynamic-field';
 
 interface Integration {
   id: string;
@@ -104,25 +104,59 @@ export default function NewWorkflowPage() {
 
   const fetchActions = async (integrationSlug: string) => {
     try {
+      console.log(`[Workflow Builder] Fetching actions for ${integrationSlug}...`);
       const response = await fetch(`/api/integrations/${integrationSlug}/actions`);
+      
       if (response.ok) {
-        const data = await response.json();
-        setActions(data.actions || []);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const actions = result.data.actions || [];
+          console.log(`[Workflow Builder] ✅ Loaded ${actions.length} actions from plugin`);
+          setActions(actions);
+        } else {
+          console.warn('[Workflow Builder] ⚠️ Unexpected response format:', result);
+          setActions([]);
+        }
+      } else {
+        const error = await response.json();
+        console.error('[Workflow Builder] ❌ Failed to fetch actions:', error);
+        setErrors(prev => ({ ...prev, actions: error.error?.message || 'Failed to load actions' }));
       }
     } catch (error) {
-      console.error('Failed to fetch actions:', error);
+      console.error('[Workflow Builder] ❌ Error fetching actions:', error);
+      setErrors(prev => ({ ...prev, actions: 'Network error while loading actions' }));
     }
   };
 
   const fetchActionSchema = async (integrationSlug: string, actionId: string) => {
     try {
+      console.log(`[Workflow Builder] Fetching schema for ${integrationSlug}.${actionId}...`);
       const response = await fetch(`/api/integrations/${integrationSlug}/actions/${actionId}/schema`);
+      
       if (response.ok) {
-        const data = await response.json();
-        setActionSchema(data.schema);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+          const schema = result.data.schema;
+          console.log(`[Workflow Builder] ✅ Loaded schema with ${schema.fields?.length || 0} fields`);
+          console.log(`[Workflow Builder] 📋 Fields:`, schema.fields?.map((f: any) => `${f.name} (${f.type}, required: ${f.required})`));
+          setActionSchema(schema);
+          
+          // Clear previous field mappings when schema changes
+          setFieldMappings({});
+        } else {
+          console.warn('[Workflow Builder] ⚠️ Unexpected response format:', result);
+          setActionSchema(null);
+        }
+      } else {
+        const error = await response.json();
+        console.error('[Workflow Builder] ❌ Failed to fetch schema:', error);
+        setErrors(prev => ({ ...prev, schema: error.error?.message || 'Failed to load action schema' }));
       }
     } catch (error) {
-      console.error('Failed to fetch action schema:', error);
+      console.error('[Workflow Builder] ❌ Error fetching schema:', error);
+      setErrors(prev => ({ ...prev, schema: 'Network error while loading schema' }));
     }
   };
 
@@ -413,16 +447,41 @@ export default function NewWorkflowPage() {
 
       {/* Step 3: Field Mapping */}
       {currentStep === 3 && actionSchema && (
-        <FieldMappingConfigurator
-          actionName={selectedActionData?.name || 'Action'}
-          actionDescription={selectedActionData?.description}
-          fields={actionSchema.fields || []}
-          mappings={fieldMappings}
-          onMappingsChange={setFieldMappings}
-          errors={errors}
-          integrationName={selectedIntegrationData?.name || ''}
-          actionId={selectedAction}
-        />
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              {selectedIntegrationData?.icon && (
+                <img 
+                  src={selectedIntegrationData.icon} 
+                  alt={selectedIntegrationData.name}
+                  className="w-10 h-10 rounded-lg"
+                />
+              )}
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {selectedActionData?.name || 'Configure Action'}
+                  <Badge variant="outline">{selectedIntegrationData?.name}</Badge>
+                </CardTitle>
+                <CardDescription>
+                  {selectedActionData?.description || 'Configure the fields for this action'}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <DynamicFieldGroup
+              fields={actionSchema.fields || []}
+              values={fieldMappings}
+              onChange={(name, value) => {
+                setFieldMappings(prev => ({ ...prev, [name]: value }));
+              }}
+              errors={errors}
+              showValidation={true}
+              title="Action Configuration"
+              description="Fill in the required fields to configure this action. Dynamic fields are loaded from the integration plugin."
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Navigation Buttons */}
