@@ -130,13 +130,29 @@ model AppIntegration {
   // e.g., Company X's Slack workspace credentials for workspace-level actions
   appCredentials Json?
   
+  // Credential Mode: "platform" or "custom"
+  credentialMode     String   @default("platform") // "platform" uses env vars, "custom" uses fields below
+  
+  // Custom OAuth Credentials (when credentialMode = "custom")
+  customClientId     String?  // Encrypted
+  customClientSecret String?  // Encrypted
+  customScopes       String[] @default([])
+  customCallbackUrl  String?
+  
+  // Testing & Validation
+  lastTestedAt       DateTime?
+  testStatus         String?  // "success", "failed", "pending"
+  testError          String?  @db.Text
+  
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   
   app           App      @relation(fields: [appId], references: [id], onDelete: Cascade)
   integration   Integration @relation(fields: [integrationId], references: [id])
   
   @@unique([appId, integrationId])
   @@index([appId])
+  @@index([credentialMode])
   @@map("app_integrations")
 }
 

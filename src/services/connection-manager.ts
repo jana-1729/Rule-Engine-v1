@@ -235,20 +235,48 @@ export class ConnectionManager {
         },
       });
       
-      // Build OAuth URL
-      const clientId = authConfig.clientId || 
-                      process.env[`${integrationSlug.toUpperCase().replace(/-/g, '_')}_CLIENT_ID`] || 
-                      '';
+      // Check if app has custom credentials configured
+      const appIntegration = await prisma.appIntegration.findUnique({
+        where: {
+          appId_integrationId: {
+            appId,
+            integrationId: integration.id,
+          },
+        },
+      });
+      
+      // Determine which credentials to use
+      let clientId: string;
+      let scopes: string[];
+      
+      if (appIntegration?.credentialMode === 'custom' && appIntegration.customClientId) {
+        // Use custom credentials
+        clientId = await decrypt(appIntegration.customClientId);
+        scopes = appIntegration.customScopes.length > 0 
+          ? appIntegration.customScopes 
+          : (authConfig.scopes || []);
+        
+        console.info(`[ConnectionManager] Using custom credentials for ${integrationSlug}`);
+      } else {
+        // Use platform credentials from environment
+        clientId = authConfig.clientId || 
+                   process.env[`${integrationSlug.toUpperCase().replace(/-/g, '_')}_CLIENT_ID`] || 
+                   '';
+        scopes = authConfig.scopes || [];
+        
+        console.info(`[ConnectionManager] Using platform credentials for ${integrationSlug}`);
+      }
       
       if (!clientId) {
         throw new Error(`OAuth client ID not configured for ${integrationSlug}`);
       }
       
+      // Build OAuth URL
       const params = new URLSearchParams({
         client_id: clientId,
         redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL}/api/connections/callback`,
         state,
-        scope: (authConfig.scopes || []).join(' '),
+        scope: scopes.join(' '),
         response_type: 'code',
       });
       
@@ -293,13 +321,37 @@ export class ConnectionManager {
       const integration = oauthState.integration;
       const authConfig = integration.authConfig as any;
       
-      // Get client credentials
-      const clientId = authConfig.clientId || 
-                      process.env[`${integration.slug.toUpperCase().replace(/-/g, '_')}_CLIENT_ID`] || 
+      // Check if app has custom credentials configured
+      const appIntegration = await prisma.appIntegration.findUnique({
+        where: {
+          appId_integrationId: {
+            appId: oauthState.appId,
+            integrationId: integration.id,
+          },
+        },
+      });
+      
+      // Determine which credentials to use
+      let clientId: string;
+      let clientSecret: string;
+      
+      if (appIntegration?.credentialMode === 'custom' && appIntegration.customClientId && appIntegration.customClientSecret) {
+        // Use custom credentials
+        clientId = await decrypt(appIntegration.customClientId);
+        clientSecret = await decrypt(appIntegration.customClientSecret);
+        
+        console.info(`[ConnectionManager] Using custom credentials for token exchange: ${integration.slug}`);
+      } else {
+        // Use platform credentials from environment
+        clientId = authConfig.clientId || 
+                   process.env[`${integration.slug.toUpperCase().replace(/-/g, '_')}_CLIENT_ID`] || 
+                   '';
+        clientSecret = authConfig.clientSecret || 
+                      process.env[`${integration.slug.toUpperCase().replace(/-/g, '_')}_CLIENT_SECRET`] || 
                       '';
-      const clientSecret = authConfig.clientSecret || 
-                          process.env[`${integration.slug.toUpperCase().replace(/-/g, '_')}_CLIENT_SECRET`] || 
-                          '';
+        
+        console.info(`[ConnectionManager] Using platform credentials for token exchange: ${integration.slug}`);
+      }
       
       if (!clientId || !clientSecret) {
         throw new Error(`OAuth credentials not configured for ${integration.slug}`);
