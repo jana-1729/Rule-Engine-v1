@@ -240,13 +240,18 @@ model EndUserConnection {
   scope         String?
   expiresAt     DateTime?
   
-  // Status
-  status        String   @default("active") // active, expired, revoked, error
+  // Status & Health Monitoring
+  status        String   @default("active") // active, expired, revoked, error, refreshing
   lastUsedAt    DateTime?
+  lastErrorAt   DateTime?
   
-  // Error tracking
+  // Error tracking & Recovery
   errorCount    Int      @default(0)
-  lastError     Json?
+  lastError     Json?    // { code, message, timestamp, recoverable }
+  consecutiveErrors Int  @default(0)
+  
+  // Connection metadata
+  metadata      Json?    // Integration-specific data (workspace info, user details, etc.)
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -255,11 +260,14 @@ model EndUserConnection {
   app           App         @relation(fields: [appId], references: [id], onDelete: Cascade)
   endUser       EndUser     @relation(fields: [endUserId], references: [id], onDelete: Cascade)
   integration   Integration @relation(fields: [integrationId], references: [id])
+  executions    Execution[]
   
+  @@unique([endUserId, integrationId]) // One connection per user per integration
   @@index([appId])
   @@index([endUserId])
   @@index([integrationId])
   @@index([status])
+  @@index([lastUsedAt])
   @@map("end_user_connections")
 }
 
@@ -273,6 +281,7 @@ model Execution {
   endUserId     String
   workflowId    String?
   integrationId String
+  connectionId  String?  // Which connection was used
   
   // What was executed
   action        String?  // e.g., "send_message", "create_page"
@@ -285,12 +294,18 @@ model Execution {
   logs          Json?    // Array of log entries
   error         Json?    // Error details
   
-  // Timing
+  // Timing & Performance
   createdAt     DateTime @default(now())
+  startedAt     DateTime?
   completedAt   DateTime?
+  duration      Int?     // Milliseconds
   
   // Status
-  status        String   // success, failed, pending, running
+  status        String   // success, failed, pending, running, retrying
+  
+  // Retry tracking
+  retryCount    Int      @default(0)
+  maxRetries    Int      @default(3)
   
   // Request metadata
   requestId     String   @unique @default(cuid())
@@ -300,11 +315,13 @@ model Execution {
   endUser       EndUser             @relation(fields: [endUserId], references: [id], onDelete: Cascade)
   workflow      Workflow?           @relation(fields: [workflowId], references: [id])
   integration   Integration         @relation(fields: [integrationId], references: [id])
+  connection    EndUserConnection?  @relation(fields: [connectionId], references: [id])
   
   @@index([appId])
   @@index([endUserId])
   @@index([workflowId])
   @@index([integrationId])
+  @@index([connectionId])
   @@index([status])
   @@index([createdAt])
   @@index([requestId])
@@ -416,11 +433,21 @@ model Workflow {
   // Definition (JSON)
   definition    Json     // Contains steps, field mappings, conditions
   
+  // Connection requirement
+  requiresConnection Boolean @default(true) // Does this workflow need end-user connection?
+  
   // Status
   enabled       Boolean  @default(true)
+  status        String   @default("draft") // draft, active, paused, error
   
   // Metadata
   metadata      Json?
+  
+  // Statistics
+  totalExecutions Int    @default(0)
+  successfulExecutions Int @default(0)
+  failedExecutions Int @default(0)
+  lastExecutedAt DateTime?
   
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -433,6 +460,7 @@ model Workflow {
   @@index([appId])
   @@index([integrationId])
   @@index([enabled])
+  @@index([status])
   @@map("workflows")
 }
 
