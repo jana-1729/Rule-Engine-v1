@@ -18,8 +18,10 @@ import { z } from 'zod';
  */
 
 const initiateSchema = z.object({
-  integration: z.string().min(1, 'Integration is required'),
-  redirectUri: z.string().url().optional(),
+  appId: z.string().min(1, 'App ID is required'),
+  endUserId: z.string().min(1, 'End user ID is required'),
+  integrationId: z.string().min(1, 'Integration ID is required'),
+  redirectUri: z.string().optional(), // Make URL validation optional for flexibility
 });
 
 export async function POST(request: NextRequest) {
@@ -43,9 +45,12 @@ export async function POST(request: NextRequest) {
     
     // Parse and validate request body
     const body = await request.json();
+    console.log('[API] OAuth initiate request:', body);
+    
     const validation = initiateSchema.safeParse(body);
     
     if (!validation.success) {
+      console.error('[API] Validation error:', validation.error.errors);
       return NextResponse.json(
         { 
           success: false,
@@ -59,26 +64,24 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    const { integration, redirectUri } = validation.data;
+    const { appId, endUserId, integrationId, redirectUri } = validation.data;
     
     // Initiate OAuth flow
     const result = await connectionManager.initiateOAuth(
-      session.accountId,
-      session.userId,
-      integration,
+      appId,
+      endUserId,
+      integrationId,
       redirectUri
     );
     
     const duration = Date.now() - startTime;
     
-    console.info(`[API] OAuth initiated for user ${session.userId}, integration ${integration}`);
+    console.info(`[API] OAuth initiated for user ${endUserId}, integration ${integrationId}`);
     
     return NextResponse.json({
       success: true,
-      data: {
-        authUrl: result.authUrl,
-        state: result.state,
-      },
+      authorizationUrl: result.authUrl,
+      state: result.state,
       meta: {
         duration,
         timestamp: new Date().toISOString(),

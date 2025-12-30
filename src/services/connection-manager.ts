@@ -199,15 +199,36 @@ export class ConnectionManager {
         throw new Error(`Invalid OAuth configuration for ${integrationSlug}`);
       }
       
+      // Ensure EndUser exists (create if not)
+      // endUserId is the externalId from the app's system
+      const endUser = await prisma.endUser.upsert({
+        where: {
+          appId_externalId: {
+            appId,
+            externalId: endUserId,
+          },
+        },
+        create: {
+          appId,
+          externalId: endUserId,
+          status: 'active',
+        },
+        update: {
+          lastActiveAt: new Date(),
+        },
+      });
+      
+      console.log(`[ConnectionManager] EndUser ensured: ${endUser.id} (externalId: ${endUserId})`);
+      
       // Generate secure state
       const state = crypto.randomBytes(32).toString('base64url');
       
-      // Store OAuth state
+      // Store OAuth state with the actual endUser.id (database ID, not externalId)
       await prisma.oAuthState.create({
         data: {
           state,
           appId,
-          endUserId,
+          endUserId: endUser.id, // Use the database ID, not the externalId
           integrationId: integration.id,
           redirectUri: redirectUri || '',
           expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minutes

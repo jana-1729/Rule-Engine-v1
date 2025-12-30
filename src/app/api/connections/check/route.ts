@@ -1,20 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { connectionManager } from '@/services/connection-manager';
+import { z } from 'zod';
 
 /**
- * GET /api/connections/check
+ * POST /api/connections/check
  * 
  * Check if user has an active connection for an integration
  * 
- * Query params:
- * - integration: Integration slug (e.g., 'slack', 'gmail')
+ * Body:
+ * - appId: App ID
+ * - endUserId: End user ID
+ * - integrationId: Integration slug (e.g., 'slack', 'gmail')
  * 
  * Returns:
- * - connected: boolean
+ * - hasConnection: boolean
  * - connection: ConnectionStatus | null
  */
-export async function GET(request: NextRequest) {
+
+const checkConnectionSchema = z.object({
+  appId: z.string().min(1, 'App ID is required'),
+  endUserId: z.string().min(1, 'End user ID is required'),
+  integrationId: z.string().min(1, 'Integration ID is required'),
+});
+
+export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
   try {
@@ -33,27 +43,33 @@ export async function GET(request: NextRequest) {
       );
     }
     
-    // Get integration slug from query params
-    const { searchParams } = new URL(request.url);
-    const integration = searchParams.get('integration');
+    // Parse and validate request body
+    const body = await request.json();
+    console.log('[API] Connection check request:', body);
     
-    if (!integration) {
+    const validation = checkConnectionSchema.safeParse(body);
+    
+    if (!validation.success) {
+      console.error('[API] Validation error:', validation.error.errors);
       return NextResponse.json(
         { 
           success: false,
           error: {
-            code: 'MISSING_PARAMETER',
-            message: 'Integration parameter is required',
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid request body',
+            details: validation.error.errors,
           },
         }, 
         { status: 400 }
       );
     }
     
+    const { appId, endUserId, integrationId } = validation.data;
+    
     // Check if connection exists
     const hasConnection = await connectionManager.hasConnection(
-      session.userId,
-      integration
+      endUserId,
+      integrationId
     );
     
     // If has connection, get full details
@@ -61,8 +77,8 @@ export async function GET(request: NextRequest) {
     if (hasConnection) {
       try {
         const conn = await connectionManager.getConnection(
-          session.userId,
-          integration
+          endUserId,
+          integrationId
         );
         
         if (conn) {
@@ -87,9 +103,11 @@ export async function GET(request: NextRequest) {
     
     const duration = Date.now() - startTime;
     
+    console.log(`[API] Connection check result: ${hasConnection} for ${integrationId}`);
+    
     return NextResponse.json({
       success: true,
-      connected: hasConnection,
+      hasConnection,
       connection: connectionDetails,
       meta: {
         duration,

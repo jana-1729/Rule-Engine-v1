@@ -11,11 +11,13 @@ import {
   Play,
   Zap,
   Settings,
-  AlertCircle
+  AlertCircle,
+  Link as LinkIcon
 } from 'lucide-react';
 import { IntegrationSelector } from '@/ui/workflow/integration-selector';
 import { ActionConfigurator } from '@/ui/workflow/action-configurator';
 import { DynamicFieldGroup } from '@/ui/workflow/dynamic-field';
+import { ConnectionStatus } from '@/ui/workflow/connection-status';
 
 interface Integration {
   id: string;
@@ -45,6 +47,10 @@ export default function NewWorkflowPage() {
   const [selectedAction, setSelectedAction] = useState<string>('');
   const [fieldMappings, setFieldMappings] = useState<Record<string, any>>({});
   const [conditions, setConditions] = useState<any[]>([]);
+  
+  // Connection state
+  const [isConnected, setIsConnected] = useState(false);
+  const [endUserId, setEndUserId] = useState<string>('demo-user-1'); // TODO: Get from session
   
   // Data
   const [apps, setApps] = useState<App[]>([]);
@@ -176,12 +182,18 @@ export default function NewWorkflowPage() {
     }
 
     if (step === 2) {
+      if (!isConnected) {
+        newErrors.connection = 'Please connect your integration account';
+      }
+    }
+
+    if (step === 3) {
       if (!selectedAction) {
         newErrors.selectedAction = 'Please select an action';
       }
     }
 
-    if (step === 3) {
+    if (step === 4) {
       // Validate required fields in field mappings
       if (actionSchema?.fields) {
         actionSchema.fields.forEach((field: any) => {
@@ -211,13 +223,20 @@ export default function NewWorkflowPage() {
       return;
     }
 
+    // Final connection check before saving
+    if (!isConnected) {
+      setErrors({ submit: 'Please connect your integration account before saving the workflow' });
+      return;
+    }
+
     setSaving(true);
     try {
       const foundIntegration = integrations.find(i => i.slug === selectedIntegration);
       
-      console.log('🔍 Debug - Selected Integration:', selectedIntegration);
-      console.log('🔍 Debug - Found Integration:', foundIntegration);
-      console.log('🔍 Debug - All Integrations:', integrations);
+      console.log('[Workflow Builder] 🔍 Saving workflow...');
+      console.log('[Workflow Builder] Selected Integration:', selectedIntegration);
+      console.log('[Workflow Builder] Found Integration:', foundIntegration);
+      console.log('[Workflow Builder] Connection Status:', isConnected);
       
       if (!foundIntegration?.id) {
         setErrors({ submit: 'Integration not found. Please select a valid integration.' });
@@ -235,11 +254,13 @@ export default function NewWorkflowPage() {
           action: selectedAction,
           fieldMappings,
           conditions,
+          endUserId, // Include end user ID for connection lookup
         },
+        requiresConnection: true, // Mark that this workflow requires a connection
         enabled: false, // Start as disabled
       };
 
-      console.log('📤 Sending workflow data:', workflow);
+      console.log('[Workflow Builder] 📤 Sending workflow data:', workflow);
 
       const response = await fetch('/api/dashboard/workflows', {
         method: 'POST',
@@ -248,14 +269,15 @@ export default function NewWorkflowPage() {
       });
 
       if (response.ok) {
+        console.log('[Workflow Builder] ✅ Workflow created successfully');
         router.push('/dashboard/workflows');
       } else {
         const data = await response.json();
-        console.error('❌ Workflow creation failed:', data);
+        console.error('[Workflow Builder] ❌ Workflow creation failed:', data);
         setErrors({ submit: data.error || 'Failed to create workflow' });
       }
     } catch (error) {
-      console.error('Failed to save workflow:', error);
+      console.error('[Workflow Builder] ❌ Error saving workflow:', error);
       setErrors({ submit: 'An error occurred while saving' });
     } finally {
       setSaving(false);
@@ -302,8 +324,9 @@ export default function NewWorkflowPage() {
           <div className="flex items-center justify-between">
             {[
               { num: 1, label: 'Basic Info', icon: Settings },
-              { num: 2, label: 'Select Action', icon: Zap },
-              { num: 3, label: 'Field Mapping', icon: Settings },
+              { num: 2, label: 'Connection', icon: LinkIcon },
+              { num: 3, label: 'Select Action', icon: Zap },
+              { num: 4, label: 'Configure', icon: Settings },
             ].map((step, idx) => {
               const Icon = step.icon;
               const isActive = currentStep === step.num;
@@ -340,6 +363,36 @@ export default function NewWorkflowPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Step 2: Connection Status */}
+      {currentStep === 2 && selectedIntegrationData && selectedApp && (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Connect Integration</CardTitle>
+              <CardDescription>
+                Connect your {selectedIntegrationData.name} account to use it in workflows
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          
+          <ConnectionStatus
+            appId={selectedApp}
+            endUserId={endUserId}
+            integrationSlug={selectedIntegration}
+            integrationName={selectedIntegrationData.name}
+            integrationLogo={selectedIntegrationData.icon}
+            onConnectionChange={(connected) => {
+              console.log(`[Workflow Builder] Connection status changed: ${connected}`);
+              setIsConnected(connected);
+              if (connected) {
+                // Auto-fetch actions when connected
+                fetchActions(selectedIntegration);
+              }
+            }}
+          />
+        </div>
+      )}
 
       {/* Error Display */}
       {errors.submit && (
@@ -434,8 +487,8 @@ export default function NewWorkflowPage() {
         </div>
       )}
 
-      {/* Step 2: Action Selection */}
-      {currentStep === 2 && selectedIntegrationData && (
+      {/* Step 3: Action Selection */}
+      {currentStep === 3 && selectedIntegrationData && isConnected && (
         <ActionConfigurator
           integration={selectedIntegrationData}
           actions={actions}
@@ -445,8 +498,8 @@ export default function NewWorkflowPage() {
         />
       )}
 
-      {/* Step 3: Field Mapping */}
-      {currentStep === 3 && actionSchema && (
+      {/* Step 4: Field Mapping */}
+      {currentStep === 4 && actionSchema && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
@@ -496,9 +549,12 @@ export default function NewWorkflowPage() {
               )}
             </div>
             <div className="flex items-center gap-2">
-              {currentStep < 3 ? (
-                <Button onClick={handleNext}>
-                  Next
+              {currentStep < 4 ? (
+                <Button 
+                  onClick={handleNext}
+                  disabled={currentStep === 2 && !isConnected}
+                >
+                  {currentStep === 2 && !isConnected ? 'Connect to Continue' : 'Next'}
                 </Button>
               ) : (
                 <Button onClick={handleSave} disabled={saving}>
