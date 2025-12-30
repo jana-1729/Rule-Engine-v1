@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectionManager } from '@/services/connection-manager';
+import { prisma } from '@/lib/prisma';
 
 /**
  * GET /api/connections/callback
@@ -13,8 +14,8 @@ import { connectionManager } from '@/services/connection-manager';
  * - error_description: Error description
  * 
  * Redirects to:
- * - Success: /dashboard/workflows/new?connected=true
- * - Error: /dashboard/workflows/new?error={error_code}
+ * - Success: Stored redirectUri or /dashboard/integrations
+ * - Error: Stored redirectUri or /dashboard/integrations with error
  */
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -27,6 +28,25 @@ export async function GET(request: NextRequest) {
     const error = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
     
+    // Get the stored OAuth state to retrieve the redirect URI
+    let redirectUri = '/dashboard/integrations';
+    let integrationId = '';
+    
+    if (state) {
+      try {
+        const oauthState = await prisma.oAuthState.findUnique({
+          where: { state },
+        });
+        
+        if (oauthState) {
+          redirectUri = oauthState.redirectUri || '/dashboard/integrations';
+          integrationId = oauthState.integrationId;
+        }
+      } catch (err) {
+        console.warn('[API] Could not retrieve OAuth state for redirect:', err);
+      }
+    }
+    
     // Handle OAuth errors
     if (error) {
       console.error('[API] OAuth error:', error, errorDescription);
@@ -35,7 +55,7 @@ export async function GET(request: NextRequest) {
       const descParam = errorDescription ? encodeURIComponent(errorDescription) : '';
       
       return NextResponse.redirect(
-        `${baseUrl}/dashboard/workflows/new?error=${errorParam}&error_description=${descParam}`
+        `${baseUrl}${redirectUri}?error=${errorParam}&error_description=${descParam}`
       );
     }
     
@@ -44,7 +64,7 @@ export async function GET(request: NextRequest) {
       console.error('[API] Missing OAuth parameters:', { code: !!code, state: !!state });
       
       return NextResponse.redirect(
-        `${baseUrl}/dashboard/workflows/new?error=missing_parameters`
+        `${baseUrl}${redirectUri}?error=missing_parameters`
       );
     }
     
@@ -57,13 +77,38 @@ export async function GET(request: NextRequest) {
     
     console.info(`[API] OAuth callback successful, connection: ${connection.id}, duration: ${duration}ms`);
     
-    // Redirect back to workflow builder with success
-    return NextResponse.redirect(
-      `${baseUrl}/dashboard/workflows/new?connected=true&integration=${connection.integrationId}`
-    );
+    // Build success redirect URL through intermediate success page
+    // This ensures the session is maintained and provides better UX
+    const successUrl = new URL('/auth/oauth-success', baseUrl);
+    successUrl.searchParams.set('connected', 'true');
+    successUrl.searchParams.set('integration', connection.integrationId);
+    successUrl.searchParams.set('connectionId', connection.id);
+    successUrl.searchParams.set('redirect', redirectUri);
+    
+    console.info(`[API] Redirecting to success page, final destination: ${redirectUri}`);
+    
+    // Redirect to success page which will then redirect to the original page
+    return NextResponse.redirect(successUrl.toString());
   } catch (error: any) {
     const duration = Date.now() - startTime;
     console.error('[API] OAuth callback error:', error);
+    
+    // Try to get redirect URI from state even on error
+    let redirectUri = '/dashboard/integrations';
+    try {
+      const { searchParams } = new URL(request.url);
+      const state = searchParams.get('state');
+      if (state) {
+        const oauthState = await prisma.oAuthState.findUnique({
+          where: { state },
+        });
+        if (oauthState?.redirectUri) {
+          redirectUri = oauthState.redirectUri;
+        }
+      }
+    } catch (err) {
+      console.warn('[API] Could not retrieve redirect URI on error:', err);
+    }
     
     // Determine error type for better user messaging
     let errorCode = 'connection_failed';
@@ -83,7 +128,7 @@ export async function GET(request: NextRequest) {
     console.error(`[API] OAuth callback failed with error: ${errorCode}, duration: ${duration}ms`);
     
     return NextResponse.redirect(
-      `${baseUrl}/dashboard/workflows/new?error=${errorCode}`
+      `${baseUrl}${redirectUri}?error=${errorCode}&error_message=${encodeURIComponent(error.message)}`
     );
   }
 }

@@ -12,8 +12,10 @@ import {
   Zap,
   Settings,
   AlertCircle,
-  Link as LinkIcon
+  Link as LinkIcon,
+  Sparkles
 } from 'lucide-react';
+import Link from 'next/link';
 import { IntegrationSelector } from '@/ui/workflow/integration-selector';
 import { ActionConfigurator } from '@/ui/workflow/action-configurator';
 import { DynamicFieldGroup } from '@/ui/workflow/dynamic-field';
