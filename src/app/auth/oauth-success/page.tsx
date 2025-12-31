@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { Card, CardContent } from '@/ui/components/card';
@@ -11,7 +11,7 @@ import { Card, CardContent } from '@/ui/components/card';
  * This page is shown after a successful OAuth callback.
  * It displays a success message and redirects the user back to their original page.
  */
-export default function OAuthSuccessPage() {
+function OAuthSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(3);
@@ -119,6 +119,25 @@ export default function OAuthSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function OAuthSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 text-blue-600 animate-spin mx-auto mb-4" />
+              <p className="text-sm text-gray-600">Loading...</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    }>
+      <OAuthSuccessContent />
+    </Suspense>
   );
 }
 

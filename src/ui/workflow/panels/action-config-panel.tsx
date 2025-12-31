@@ -39,6 +39,16 @@ export function ActionConfigPanel({ node, onUpdate }: ActionConfigPanelProps) {
     if (nodeData.action) {
       setSelectedAction(nodeData.action);
     }
+    
+    // Check for OAuth success in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('connected') === 'true') {
+      const connectedIntegrationId = urlParams.get('integration');
+      if (connectedIntegrationId && nodeData.integration?.id === connectedIntegrationId) {
+        // Refresh connection status
+        checkConnection(nodeData.integration);
+      }
+    }
   }, [node]);
 
   const fetchIntegrations = async () => {
@@ -115,7 +125,7 @@ export function ActionConfigPanel({ node, onUpdate }: ActionConfigPanelProps) {
         body: JSON.stringify({
           appId: 'demo-app-1', // TODO: Get from session
           endUserId: 'demo-user-1', // TODO: Get from session
-          integrationId: integration.id,
+          integrationId: integration.slug, // Use slug, not database ID
         }),
       });
       
@@ -176,7 +186,7 @@ export function ActionConfigPanel({ node, onUpdate }: ActionConfigPanelProps) {
         body: JSON.stringify({
           appId: 'demo-app-1', // TODO: Get from session
           endUserId: 'demo-user-1', // TODO: Get from session
-          integrationId: selectedIntegration.id,
+          integrationId: selectedIntegration.slug, // Use slug, not database ID
           redirectUri: window.location.href,
         }),
       });

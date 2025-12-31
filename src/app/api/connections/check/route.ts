@@ -66,10 +66,11 @@ export async function POST(request: NextRequest) {
     
     const { appId, endUserId, integrationId } = validation.data;
     
-    // Check if connection exists
+    // Check if connection exists (pass appId to filter by app)
     const hasConnection = await connectionManager.hasConnection(
       endUserId,
-      integrationId
+      integrationId,
+      appId
     );
     
     // If has connection, get full details
@@ -78,7 +79,8 @@ export async function POST(request: NextRequest) {
       try {
         const conn = await connectionManager.getConnection(
           endUserId,
-          integrationId
+          integrationId,
+          appId
         );
         
         if (conn) {

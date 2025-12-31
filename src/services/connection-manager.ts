@@ -45,8 +45,9 @@ export class ConnectionManager {
    * Check if end user has active connection for integration
    * @param endUserIdOrExternalId - Can be either the database ID or external ID
    * @param integrationSlug - Integration slug (e.g., 'jira', 'slack')
+   * @param appId - Optional app ID to filter connections by app
    */
-  async hasConnection(endUserIdOrExternalId: string, integrationSlug: string): Promise<boolean> {
+  async hasConnection(endUserIdOrExternalId: string, integrationSlug: string, appId?: string): Promise<boolean> {
     try {
       const integration = await prisma.integration.findUnique({
         where: { slug: integrationSlug },
@@ -57,27 +58,46 @@ export class ConnectionManager {
         return false;
       }
       
+      // Build where clause
+      const whereClause: any = {
+        integrationId: integration.id,
+        OR: [
+          { endUserId: endUserIdOrExternalId }, // Database ID
+          { endUser: { externalId: endUserIdOrExternalId } }, // External ID
+        ],
+      };
+      
+      // Add appId filter if provided
+      if (appId) {
+        whereClause.appId = appId;
+      }
+      
       // Try to find connection by database ID first
       let connection = await prisma.endUserConnection.findFirst({
-        where: {
-          integrationId: integration.id,
-          OR: [
-            { endUserId: endUserIdOrExternalId }, // Database ID
-            { endUser: { externalId: endUserIdOrExternalId } }, // External ID
-          ],
+        where: whereClause,
+        orderBy: {
+          createdAt: 'desc', // Get the most recent connection
         },
       });
       
       if (!connection) {
-        console.info(`[ConnectionManager] No connection found for user ${endUserIdOrExternalId} and integration ${integrationSlug}`);
+        console.info(`[ConnectionManager] No connection found for user ${endUserIdOrExternalId} and integration ${integrationSlug}${appId ? ` (app: ${appId})` : ''}`);
         return false;
       }
       
-      // Check if connection is active and not expired
+      // Check if connection is active
       const isActive = connection.status === 'active';
-      const isNotExpired = !connection.expiresAt || connection.expiresAt > new Date();
       
-      console.info(`[ConnectionManager] Connection found: ${connection.id}, active: ${isActive}, notExpired: ${isNotExpired}`);
+      // Check if token is expired (with 5-minute buffer for refresh)
+      const isNotExpired = !connection.expiresAt || connection.expiresAt > new Date(Date.now() + 5 * 60 * 1000);
+      
+      console.info(`[ConnectionManager] Connection found: ${connection.id}, active: ${isActive}, notExpired: ${isNotExpired}, expiresAt: ${connection.expiresAt?.toISOString()}`);
+      
+      // If token is expired but we have a refresh token, consider it valid (we'll refresh on use)
+      if (!isNotExpired && connection.refreshToken) {
+        console.info(`[ConnectionManager] Token expired but refresh token available for connection ${connection.id}`);
+        return isActive; // Return true if active, even if expired (we can refresh)
+      }
       
       return isActive && isNotExpired;
     } catch (error) {
@@ -90,10 +110,12 @@ export class ConnectionManager {
    * Get connection with decrypted credentials
    * @param endUserIdOrExternalId - Can be either the database ID or external ID
    * @param integrationSlug - Integration slug (e.g., 'jira', 'slack')
+   * @param appId - Optional app ID to filter connections by app
    */
   async getConnection(
     endUserIdOrExternalId: string, 
-    integrationSlug: string
+    integrationSlug: string,
+    appId?: string
   ): Promise<(ConnectionStatus & { credentials: ConnectionCredentials }) | null> {
     try {
       const integration = await prisma.integration.findUnique({
@@ -104,15 +126,23 @@ export class ConnectionManager {
         throw new Error(`Integration not found: ${integrationSlug}`);
       }
       
+      // Build where clause
+      const whereClause: any = {
+        integrationId: integration.id,
+        OR: [
+          { endUserId: endUserIdOrExternalId }, // Database ID
+          { endUser: { externalId: endUserIdOrExternalId } }, // External ID
+        ],
+      };
+      
+      // Add appId filter if provided
+      if (appId) {
+        whereClause.appId = appId;
+      }
+      
       // Try to find connection by database ID or external ID
       const connection = await prisma.endUserConnection.findFirst({
-        where: {
-          integrationId: integration.id,
-          OR: [
-            { endUserId: endUserIdOrExternalId }, // Database ID
-            { endUser: { externalId: endUserIdOrExternalId } }, // External ID
-          ],
-        },
+        where: whereClause,
         include: {
           integration: {
             select: {
@@ -122,6 +152,9 @@ export class ConnectionManager {
               logo: true,
             },
           },
+        },
+        orderBy: {
+          createdAt: 'desc', // Get the most recent connection
         },
       });
       
