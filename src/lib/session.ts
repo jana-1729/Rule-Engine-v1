@@ -84,6 +84,18 @@ export async function getSession(): Promise<Session | null> {
       return null;
     }
 
+    // Validate that the user and account still exist
+    const user = await prisma.accountUser.findUnique({
+      where: { id: session.userId },
+      include: { account: true },
+    });
+
+    if (!user || !user.account) {
+      // Session references non-existent user or account
+      await destroySession();
+      return null;
+    }
+
     return {
       userId: session.userId,
       accountId: session.accountId,

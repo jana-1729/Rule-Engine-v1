@@ -58,6 +58,19 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, description } = createAppSchema.parse(body);
 
+    // Verify account exists
+    const account = await prisma.account.findUnique({
+      where: { id: session.accountId },
+    });
+
+    if (!account) {
+      console.error('Account not found for session:', session.accountId);
+      return NextResponse.json(
+        { error: 'Account not found. Please log in again.' },
+        { status: 400 }
+      );
+    }
+
     // Generate app ID and API key
     const appId = `app_${nanoid(16)}`;
     const apiKey = generateApiKey(appId);
@@ -97,6 +110,14 @@ export async function POST(request: NextRequest) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    // Handle Prisma foreign key constraint errors
+    if (error.code === 'P2003') {
+      return NextResponse.json(
+        { error: 'Invalid account reference. Please log in again.' },
         { status: 400 }
       );
     }
