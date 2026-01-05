@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { workflow, input, endUserId } = testExecutionSchema.parse(body);
 
     // Get app ID (for now, use first app)
-    const app = await prisma.app.findFirst({
+    const app = await prisma.apps.findFirst({
       where: { accountId: session.userId },
     });
 
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Create a temporary workflow for testing
     // Get first integration for placeholder
-    const firstIntegration = await prisma.integration.findFirst();
+    const firstIntegration = await prisma.integrations.findFirst();
     if (!firstIntegration) {
       return NextResponse.json(
         { success: false, error: { code: 'NOT_FOUND', message: 'No integrations available' } },
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const tempWorkflow = await prisma.workflow.create({
+    const tempWorkflow = await prisma.workflows.create({
       data: {
         name: `[TEST] ${workflow.name}`,
         appId: app.id,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Clean up temporary workflow
-    await prisma.workflow.delete({
+    await prisma.workflows.delete({
       where: { id: tempWorkflow.id },
     });
 

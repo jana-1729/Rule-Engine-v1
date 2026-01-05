@@ -33,7 +33,7 @@ export async function POST(
     const validatedData = testSchema.parse(body);
 
     // Get integration
-    const integration = await prisma.integration.findUnique({
+    const integration = await prisma.integrations.findUnique({
       where: { slug },
     });
 
@@ -126,12 +126,12 @@ export async function POST(
 
     // Update test status in database if this is for saved settings
     if (validatedData.credentialMode === 'custom') {
-      const app = await prisma.app.findFirst({
+      const app = await prisma.apps.findFirst({
         where: { accountId: session.userId },
       });
 
       if (app) {
-        await prisma.appIntegration.updateMany({
+        await prisma.app_integrations.updateMany({
           where: {
             appId: app.id,
             integrationId: integration.id,
@@ -165,17 +165,17 @@ export async function POST(
     try {
       const session = await getSession();
       if (session) {
-        const app = await prisma.app.findFirst({
+        const app = await prisma.apps.findFirst({
           where: { accountId: session.userId },
         });
 
         if (app) {
-          const integration = await prisma.integration.findUnique({
+          const integration = await prisma.integrations.findUnique({
             where: { slug: params.slug },
           });
 
           if (integration) {
-            await prisma.appIntegration.updateMany({
+            await prisma.app_integrations.updateMany({
               where: {
                 appId: app.id,
                 integrationId: integration.id,

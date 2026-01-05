@@ -22,9 +22,9 @@ export interface Session {
  * Create a new session
  */
 export async function createSession(userId: string): Promise<string> {
-  const user = await prisma.accountUser.findUnique({
+  const user = await prisma.account_users.findUnique({
     where: { id: userId },
-    include: { account: true },
+    include: { accounts: true },
   });
 
   if (!user) {
@@ -44,7 +44,7 @@ export async function createSession(userId: string): Promise<string> {
 
   // Store session in database (simplified - use Redis in production)
   // Note: Audit log creation is optional for session management
-  // await prisma.auditLog.create({
+  // await prisma.audit_logs.create({
   //   data: {
   //     accountId: user.accountId,
   //     appId: user.accountId, // This should be the actual appId
@@ -85,12 +85,12 @@ export async function getSession(): Promise<Session | null> {
     }
 
     // Validate that the user and account still exist
-    const user = await prisma.accountUser.findUnique({
+    const user = await prisma.account_users.findUnique({
       where: { id: session.userId },
-      include: { account: true },
+      include: { accounts: true },
     });
 
-    if (!user || !user.account) {
+    if (!user || !user.accounts) {
       // Session references non-existent user or account
       await destroySession();
       return null;
@@ -122,9 +122,9 @@ export async function authenticateUser(
   email: string,
   password: string
 ): Promise<{ user: any; account: any } | null> {
-  const user = await prisma.accountUser.findFirst({
+  const user = await prisma.account_users.findFirst({
     where: { email },
-    include: { account: true },
+    include: { accounts: true },
   });
 
   if (!user || !user.passwordHash) {
@@ -137,7 +137,7 @@ export async function authenticateUser(
     return null;
   }
 
-  return { user, account: user.account };
+  return { user, account: user.accounts };
 }
 
 /**

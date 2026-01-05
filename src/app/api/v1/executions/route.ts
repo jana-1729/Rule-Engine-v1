@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     };
 
     if (endUserId) {
-      const endUser = await prisma.endUser.findUnique({
+      const endUser = await prisma.end_users.findUnique({
         where: {
           appId_externalId: {
             appId: app.id,
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (integrationSlug) {
-      const integration = await prisma.integration.findUnique({
+      const integration = await prisma.integrations.findUnique({
         where: { slug: integrationSlug },
       });
       if (integration) {
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
 
     // Get executions
     const [executions, total] = await Promise.all([
-      prisma.execution.findMany({
+      prisma.executions.findMany({
         where,
         include: {
           endUser: {
@@ -120,11 +120,11 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset,
       }),
-      prisma.execution.count({ where }),
+      prisma.executions.count({ where }),
     ]);
 
     // Calculate stats
-    const stats = await prisma.execution.groupBy({
+    const stats = await prisma.executions.groupBy({
       by: ['status'],
       where: { appId: app.id },
       _count: true,
@@ -137,14 +137,14 @@ export async function GET(request: NextRequest) {
         id: exec.id,
         requestId: exec.requestId,
         endUser: {
-          id: exec.endUser.externalId,
-          email: exec.endUser.email,
-          name: exec.endUser.name,
+          id: exec.end_users.externalId,
+          email: exec.end_users.email,
+          name: exec.end_users.name,
         },
         integration: {
-          slug: exec.integration.slug,
-          name: exec.integration.name,
-          logo: exec.integration.logo,
+          slug: exec.integrations.slug,
+          name: exec.integrations.name,
+          logo: exec.integrations.logo,
         },
         action: exec.action,
         status: exec.status,

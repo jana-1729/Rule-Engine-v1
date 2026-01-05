@@ -19,7 +19,7 @@ export default async function IntegrationDetailPage({
   }
 
   // Fetch integration details
-  const integration = await prisma.integration.findUnique({
+  const integration = await prisma.integrations.findUnique({
     where: { slug: params.slug },
   });
 
@@ -52,33 +52,33 @@ export default async function IntegrationDetailPage({
   }));
 
   // Fetch connections for this integration across all apps
-  const connections = await prisma.endUserConnection.findMany({
+  const connections = await prisma.end_user_connections.findMany({
     where: {
       integrationId: integration.id,
-      app: {
+      apps: {
         accountId: session.accountId,
       },
     },
     include: {
-      app: true,
-      endUser: true,
+      apps: true,
+      end_users: true,
     },
     orderBy: { createdAt: 'desc' },
   });
 
   // Fetch recent executions
-  const executions = await prisma.execution.findMany({
+  const executions = await prisma.executions.findMany({
     where: {
       integrationId: integration.id,
-      app: {
+      apps: {
         accountId: session.accountId,
       },
     },
     orderBy: { createdAt: 'desc' },
     take: 10,
     include: {
-      app: true,
-      endUser: true,
+      apps: true,
+      end_users: true,
     },
   });
 
@@ -235,10 +235,10 @@ export default async function IntegrationDetailPage({
                 >
                   <div>
                     <div className="font-medium text-gray-900">
-                      {conn.endUser?.externalId || 'Unknown User'}
+                      {conn.end_users?.externalId || 'Unknown User'}
                     </div>
                     <div className="text-sm text-gray-600">
-                      App: {conn.app.name}
+                      App: {conn.apps.name}
                     </div>
                   </div>
                   <div className="text-sm text-gray-500">
@@ -269,7 +269,7 @@ export default async function IntegrationDetailPage({
                   <div>
                     <div className="font-medium text-gray-900">{execution.action}</div>
                     <div className="text-sm text-gray-600">
-                      {execution.app.name} • {new Date(execution.createdAt).toLocaleString()}
+                      {execution.apps.name} • {new Date(execution.createdAt).toLocaleString()}
                     </div>
                   </div>
                   <Badge

@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch workflows for this app
-    const workflows = await prisma.workflow.findMany({
+    const workflows = await prisma.workflows.findMany({
       where: {
         appId: validation.appId,
         enabled: true, // Only return enabled workflows

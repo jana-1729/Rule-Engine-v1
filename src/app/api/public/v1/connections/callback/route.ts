@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get OAuth state
-    const oauthState = await prisma.oAuthState.findUnique({
+    const oauthState = await prisma.oauth_states.findUnique({
       where: { state },
       include: {
         integration: true,
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Exchange code for token
-    const authConfig = oauthState.integration.authConfig as any;
+    const authConfig = oauthState.integrations.authConfig as any;
     
     const tokenResponse = await axios.post(
       authConfig.tokenUrl,
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       : null;
 
     // Create or update connection
-    const existingConnection = await prisma.endUserConnection.findFirst({
+    const existingConnection = await prisma.end_usersConnection.findFirst({
       where: {
         appId: oauthState.appId,
         endUserId: oauthState.endUserId,
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
 
     let connection;
     if (existingConnection) {
-      connection = await prisma.endUserConnection.update({
+      connection = await prisma.end_usersConnection.update({
         where: { id: existingConnection.id },
         data: {
           accessToken: encryptedAccessToken,
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
         },
       });
     } else {
-      connection = await prisma.endUserConnection.create({
+      connection = await prisma.end_usersConnection.create({
         data: {
           appId: oauthState.appId,
           endUserId: oauthState.endUserId,
@@ -120,15 +120,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Delete OAuth state
-    await prisma.oAuthState.delete({
+    await prisma.oauth_states.delete({
       where: { state },
     });
 
     // Redirect to customer's redirect URI
-    const redirectUrl = new URL(oauthState.redirectUri || oauthState.app.webhookUrl || '/');
+    const redirectUrl = new URL(oauthState.redirectUri || oauthState.apps.webhookUrl || '/');
     redirectUrl.searchParams.set('success', 'true');
     redirectUrl.searchParams.set('connectionId', connection.id);
-    redirectUrl.searchParams.set('integration', oauthState.integration.slug);
+    redirectUrl.searchParams.set('integration', oauthState.integrations.slug);
 
     return NextResponse.redirect(redirectUrl.toString());
   } catch (error: any) {

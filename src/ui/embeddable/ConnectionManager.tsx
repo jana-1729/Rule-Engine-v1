@@ -179,22 +179,22 @@ export function ConnectionManager({
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
-                  {connection.integration.logo ? (
+                  {connection.integrations.logo ? (
                     <img
-                      src={connection.integration.logo}
-                      alt={connection.integration.name}
+                      src={connection.integrations.logo}
+                      alt={connection.integrations.name}
                       className="w-12 h-12 rounded-lg"
                     />
                   ) : (
                     <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center text-gray-600 font-bold">
-                      {connection.integration.name.charAt(0)}
+                      {connection.integrations.name.charAt(0)}
                     </div>
                   )}
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="font-semibold text-lg">
-                        {connection.integration.name}
+                        {connection.integrations.name}
                       </h3>
                       <Badge className={getStatusColor(connection.status)}>
                         {connection.status}

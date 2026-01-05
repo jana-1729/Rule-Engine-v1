@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get integrations
-    const integrations = await prisma.integration.findMany({
+    const integrations = await prisma.integrations.findMany({
       where,
       select: {
         id: true,
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get connection counts for this app
-    const connectionCounts = await prisma.endUserConnection.groupBy({
+    const connectionCounts = await prisma.end_usersConnection.groupBy({
       by: ['integrationId'],
       where: {
         appId: app.id,

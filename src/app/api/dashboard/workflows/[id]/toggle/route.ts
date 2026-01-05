@@ -13,7 +13,7 @@ export async function PATCH(
     const { id } = params;
 
     // Check if workflow exists and belongs to user's account
-    const workflow = await prisma.workflow.findUnique({
+    const workflow = await prisma.workflows.findUnique({
       where: { id },
       include: {
         app: {
@@ -31,7 +31,7 @@ export async function PATCH(
       );
     }
 
-    if (workflow.app.accountId !== session.accountId) {
+    if (workflow.apps.accountId !== session.accountId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -39,7 +39,7 @@ export async function PATCH(
     }
 
     // Toggle the enabled status
-    const updatedWorkflow = await prisma.workflow.update({
+    const updatedWorkflow = await prisma.workflows.update({
       where: { id },
       data: {
         enabled: !workflow.enabled,

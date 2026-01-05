@@ -80,7 +80,7 @@ export class WorkflowExecutor {
 
     try {
       // Get workflow
-      const workflow = await prisma.workflow.findUnique({
+      const workflow = await prisma.workflows.findUnique({
         where: { id: workflowId },
         include: {
           integration: true,
@@ -104,7 +104,7 @@ export class WorkflowExecutor {
       }
 
       // Create execution record
-      const execution = await prisma.execution.create({
+      const execution = await prisma.executions.create({
         data: {
           workflowId,
           appId,
@@ -167,7 +167,7 @@ export class WorkflowExecutor {
       this.log('info', 'Workflow execution completed', { duration });
 
       // Update execution record
-      await prisma.execution.update({
+      await prisma.executions.update({
         where: { id: execution.id },
         data: {
           status: 'completed',
@@ -193,7 +193,7 @@ export class WorkflowExecutor {
 
       // Update execution record
       if (this.context) {
-        await prisma.execution.update({
+        await prisma.executions.update({
           where: { id: this.context.executionId },
           data: {
             status: 'failed',
@@ -306,9 +306,9 @@ export class WorkflowExecutor {
     }
 
     // Get integration
-    const integration = integrationRegistry.get(nodeData.integration.slug);
+    const integration = integrationRegistry.get(nodeData.integrations.slug);
     if (!integration) {
-      throw new Error(`Integration not found: ${nodeData.integration.slug}`);
+      throw new Error(`Integration not found: ${nodeData.integrations.slug}`);
     }
 
     // Get action
@@ -320,16 +320,16 @@ export class WorkflowExecutor {
     // Get connection
     const connection = await connectionManager.getConnection(
       this.context.endUserId,
-      nodeData.integration.slug
+      nodeData.integrations.slug
     );
 
     if (!connection) {
-      throw new Error(`No connection found for ${nodeData.integration.name}`);
+      throw new Error(`No connection found for ${nodeData.integrations.name}`);
     }
 
     // Execute action
     this.log('info', `Calling integration action`, {
-      integration: nodeData.integration.slug,
+      integration: nodeData.integrations.slug,
       action: nodeData.action,
     });
 

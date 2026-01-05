@@ -34,7 +34,7 @@ export function ActionConfigPanel({ node, onUpdate }: ActionConfigPanelProps) {
     if (nodeData.integration) {
       setSelectedIntegration(nodeData.integration);
       setIsConnected(nodeData.connected || false);
-      fetchActions(nodeData.integration.slug);
+      fetchActions(nodeData.integrations.slug);
     }
     if (nodeData.action) {
       setSelectedAction(nodeData.action);

@@ -13,7 +13,7 @@ export async function verifyApiKey(apiKey: string) {
   const keyHash = hashApiKey(apiKey);
 
   // Find app by hashed key
-  const app = await prisma.app.findFirst({
+  const app = await prisma.apps.findFirst({
     where: {
       apiKey: keyHash,
       status: 'active',
@@ -35,12 +35,12 @@ export async function verifyApiKey(apiKey: string) {
   }
 
   // Check if account is active
-  if (app.account.status !== 'active') {
+  if (app.accounts.status !== 'active') {
     return null;
   }
 
   // Update last used (async, don't wait)
-  prisma.apiKeyVersion.updateMany({
+  prisma.api_key_versions.updateMany({
     where: {
       keyHash,
       appId: app.id,
@@ -117,7 +117,7 @@ export async function checkRateLimit(
   
   const windowStart = new Date(Date.now() - windowMs);
   
-  const count = await prisma.execution.count({
+  const count = await prisma.executions.count({
     where: {
       appId,
       createdAt: {

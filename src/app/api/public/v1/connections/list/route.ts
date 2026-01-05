@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get end user
-    const endUser = await prisma.endUser.findFirst({
+    const endUser = await prisma.end_users.findFirst({
       where: {
         appId: app.id,
         externalId: endUserId,
@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
     };
 
     if (integrationSlug) {
-      const integration = await prisma.integration.findUnique({
+      const integration = await prisma.integrations.findUnique({
         where: { slug: integrationSlug },
       });
       if (integration) {
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get connections
-    const connections = await prisma.endUserConnection.findMany({
+    const connections = await prisma.end_usersConnection.findMany({
       where,
       include: {
         integration: {
@@ -125,11 +125,11 @@ export async function GET(request: NextRequest) {
     const formattedConnections = connections.map((conn) => ({
       id: conn.id,
       integration: {
-        id: conn.integration.id,
-        slug: conn.integration.slug,
-        name: conn.integration.name,
-        logo: conn.integration.logo,
-        category: conn.integration.category,
+        id: conn.integrations.id,
+        slug: conn.integrations.slug,
+        name: conn.integrations.name,
+        logo: conn.integrations.logo,
+        category: conn.integrations.category,
       },
       status: conn.status,
       scope: conn.scope,

@@ -66,7 +66,7 @@ export class APIKeyService {
     const keyPrefix = this.getKeyPrefix(apiKey);
 
     // Store in database
-    const apiKeyRecord = await prisma.app.update({
+    const apiKeyRecord = await prisma.apps.update({
       where: { id: appId },
       data: {
         apiKey: hashedKey,
@@ -100,7 +100,7 @@ export class APIKeyService {
       const hashedKey = this.hashKey(apiKey);
 
       // Find app with this key
-      const app = await prisma.app.findFirst({
+      const app = await prisma.apps.findFirst({
         where: {
           apiKey: hashedKey,
           status: 'active',
@@ -118,7 +118,7 @@ export class APIKeyService {
       }
 
       // Check if account is active
-      if (app.account.status !== 'active') {
+      if (app.accounts.status !== 'active') {
         return {
           valid: false,
           error: 'Account is not active',
@@ -126,7 +126,7 @@ export class APIKeyService {
       }
 
       // Update last used timestamp
-      await prisma.app.update({
+      await prisma.apps.update({
         where: { id: app.id },
         data: {
           updatedAt: new Date(),
@@ -155,7 +155,7 @@ export class APIKeyService {
     gracePeriodDays: number = 30
   ): Promise<APIKeyRotationResult> {
     // Get current app
-    const app = await prisma.app.findUnique({
+    const app = await prisma.apps.findUnique({
       where: { id: appId },
     });
 
@@ -173,7 +173,7 @@ export class APIKeyService {
     expiresAt.setDate(expiresAt.getDate() + gracePeriodDays);
 
     // Update app with new key
-    await prisma.app.update({
+    await prisma.apps.update({
       where: { id: appId },
       data: {
         apiKey: hashedNewKey,
@@ -202,7 +202,7 @@ export class APIKeyService {
    */
   async revokeKey(appId: string): Promise<{ success: boolean }> {
     try {
-      await prisma.app.update({
+      await prisma.apps.update({
         where: { id: appId },
         data: {
           status: 'inactive',
@@ -233,7 +233,7 @@ export class APIKeyService {
     startDate.setDate(startDate.getDate() - days);
 
     // Get execution stats
-    const executions = await prisma.execution.findMany({
+    const executions = await prisma.executions.findMany({
       where: {
         appId,
         createdAt: {
@@ -290,7 +290,7 @@ export class APIKeyService {
     remaining: number;
     resetAt: Date;
   }> {
-    const app = await prisma.app.findUnique({
+    const app = await prisma.apps.findUnique({
       where: { id: appId },
     });
 
@@ -303,7 +303,7 @@ export class APIKeyService {
     windowStart.setMinutes(windowStart.getMinutes() - windowMinutes);
 
     // Count requests in window
-    const requestCount = await prisma.execution.count({
+    const requestCount = await prisma.executions.count({
       where: {
         appId,
         createdAt: {
@@ -363,7 +363,7 @@ export class APIKeyService {
       action: string;
     }> = [];
 
-    const app = await prisma.app.findUnique({
+    const app = await prisma.apps.findUnique({
       where: { id: appId },
     });
 

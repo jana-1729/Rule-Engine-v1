@@ -19,10 +19,10 @@ export default async function WorkflowDetailPage({
   }
 
   // Fetch workflow details
-  const workflow = await prisma.workflow.findUnique({
+  const workflow = await prisma.workflows.findUnique({
     where: { id: params.id },
     include: {
-      app: {
+      apps: {
         select: {
           id: true,
           name: true,
@@ -30,7 +30,7 @@ export default async function WorkflowDetailPage({
           accountId: true,
         },
       },
-      integration: {
+      integrations: {
         select: {
           id: true,
           slug: true,
@@ -43,7 +43,7 @@ export default async function WorkflowDetailPage({
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
-          endUser: {
+          end_users: {
             select: {
               id: true,
               externalId: true,
@@ -59,7 +59,7 @@ export default async function WorkflowDetailPage({
   }
 
   // Check if workflow belongs to user's account
-  if (workflow.app.accountId !== session.accountId) {
+  if (workflow.apps.accountId !== session.accountId) {
     notFound();
   }
 
@@ -85,10 +85,10 @@ export default async function WorkflowDetailPage({
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-4">
           <div className="w-16 h-16 bg-white border border-gray-200 rounded-xl flex items-center justify-center overflow-hidden shadow-md">
-            {workflow.integration.logo ? (
+            {workflow.integrations.logo ? (
               <img 
-                src={workflow.integration.logo} 
-                alt={workflow.integration.name}
+                src={workflow.integrations.logo} 
+                alt={workflow.integrations.name}
                 className="w-full h-full object-contain p-2"
               />
             ) : (
@@ -103,7 +103,7 @@ export default async function WorkflowDetailPage({
                 {workflow.enabled ? 'Active' : 'Inactive'}
               </Badge>
               <span className="text-sm text-gray-500">
-                {workflow.integration.name}
+                {workflow.integrations.name}
               </span>
             </div>
           </div>
@@ -185,8 +185,8 @@ export default async function WorkflowDetailPage({
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-2">App</h3>
             <div className="flex items-center space-x-2">
-              <Badge variant="outline">{workflow.app.name}</Badge>
-              <span className="text-xs text-gray-500">ID: {workflow.app.appId}</span>
+              <Badge variant="outline">{workflow.apps.name}</Badge>
+              <span className="text-xs text-gray-500">ID: {workflow.apps.appId}</span>
             </div>
           </div>
 
@@ -194,16 +194,16 @@ export default async function WorkflowDetailPage({
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-2">Integration</h3>
             <div className="flex items-center space-x-3">
-              {workflow.integration.logo && (
+              {workflow.integrations.logo && (
                 <img 
-                  src={workflow.integration.logo} 
-                  alt={workflow.integration.name}
+                  src={workflow.integrations.logo} 
+                  alt={workflow.integrations.name}
                   className="w-8 h-8 object-contain"
                 />
               )}
               <div>
-                <div className="font-medium">{workflow.integration.name}</div>
-                <div className="text-xs text-gray-500 capitalize">{workflow.integration.category}</div>
+                <div className="font-medium">{workflow.integrations.name}</div>
+                <div className="text-xs text-gray-500 capitalize">{workflow.integrations.category}</div>
               </div>
             </div>
           </div>
@@ -288,7 +288,7 @@ export default async function WorkflowDetailPage({
                         {execution.status}
                       </Badge>
                       <span className="text-sm text-gray-600">
-                        {execution.endUser?.externalId || 'Unknown User'}
+                        {execution.end_users?.externalId || 'Unknown User'}
                       </span>
                     </div>
                     <div className="text-xs text-gray-500 mt-1">

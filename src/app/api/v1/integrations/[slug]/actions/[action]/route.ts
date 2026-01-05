@@ -62,7 +62,7 @@ export async function POST(
     }
 
     // Get integration
-    const integration = await prisma.integration.findUnique({
+    const integration = await prisma.integrations.findUnique({
       where: { slug: params.slug },
     });
 
@@ -74,7 +74,7 @@ export async function POST(
     }
 
     // Get end user
-    const endUser = await prisma.endUser.findUnique({
+    const endUser = await prisma.end_users.findUnique({
       where: {
         appId_externalId: {
           appId: app.id,
@@ -91,7 +91,7 @@ export async function POST(
     }
 
     // Get connection
-    const connection = await prisma.endUserConnection.findFirst({
+    const connection = await prisma.end_usersConnection.findFirst({
       where: {
         appId: app.id,
         endUserId: endUser.id,
@@ -160,7 +160,7 @@ export async function POST(
     const duration = Date.now() - startTime;
 
     // Log execution
-    await prisma.execution.create({
+    await prisma.executions.create({
       data: {
         id: executionId,
         appId: app.id,
@@ -182,7 +182,7 @@ export async function POST(
     });
 
     // Update connection last used
-    await prisma.endUserConnection.update({
+    await prisma.end_usersConnection.update({
       where: { id: connection.id },
       data: {
         lastUsedAt: new Date(),
@@ -192,7 +192,7 @@ export async function POST(
     });
 
     // Update end user last active
-    await prisma.endUser.update({
+    await prisma.end_users.update({
       where: { id: endUser.id },
       data: { lastActiveAt: new Date() },
     });

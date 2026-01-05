@@ -88,7 +88,7 @@ export function IntegrationCatalog({
 
   const isConnected = (integrationId: string) => {
     return connections.some(
-      (conn) => conn.integration.id === integrationId && conn.status === 'active'
+      (conn) => conn.integrations.id === integrationId && conn.status === 'active'
     );
   };
 

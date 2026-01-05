@@ -13,15 +13,15 @@ export default async function WorkflowsPage() {
   }
 
   // Fetch workflows from database
-  const workflows = await prisma.workflow.findMany({
+  const workflows = await prisma.workflows.findMany({
     where: {
-      app: {
+      apps: {
         accountId: session.accountId,
       },
     },
     include: {
-      integration: true,
-      app: true,
+      integrations: true,
+      apps: true,
       _count: {
         select: {
           executions: true,
@@ -80,19 +80,19 @@ export default async function WorkflowsPage() {
                     </p>
                     <div className="flex items-center gap-4 mt-2">
                       <div className="flex items-center gap-2">
-                        {workflow.integration.logo && (
+                        {workflow.integrations.logo && (
                           <img 
-                            src={workflow.integration.logo} 
-                            alt={workflow.integration.name}
+                            src={workflow.integrations.logo} 
+                            alt={workflow.integrations.name}
                             className="w-4 h-4 object-contain"
                           />
                         )}
                         <span className="text-xs text-gray-500">
-                          Integration: <span className="font-medium text-gray-700">{workflow.integration.name}</span>
+                          Integration: <span className="font-medium text-gray-700">{workflow.integrations.name}</span>
                         </span>
                       </div>
                       <span className="text-xs text-gray-500">
-                        App: <span className="font-medium text-gray-700">{workflow.app.name}</span>
+                        App: <span className="font-medium text-gray-700">{workflow.apps.name}</span>
                       </span>
                     </div>
                   </div>

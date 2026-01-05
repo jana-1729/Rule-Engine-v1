@@ -13,7 +13,7 @@ export async function DELETE(
     const { id } = params;
 
     // Check if workflow exists and belongs to user's account
-    const workflow = await prisma.workflow.findUnique({
+    const workflow = await prisma.workflows.findUnique({
       where: { id },
       include: {
         app: {
@@ -31,7 +31,7 @@ export async function DELETE(
       );
     }
 
-    if (workflow.app.accountId !== session.accountId) {
+    if (workflow.apps.accountId !== session.accountId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -39,7 +39,7 @@ export async function DELETE(
     }
 
     // Delete the workflow
-    await prisma.workflow.delete({
+    await prisma.workflows.delete({
       where: { id },
     });
 
@@ -70,7 +70,7 @@ export async function GET(
     const { id } = params;
 
     // Fetch workflow
-    const workflow = await prisma.workflow.findUnique({
+    const workflow = await prisma.workflows.findUnique({
       where: { id },
       include: {
         app: {
@@ -99,7 +99,7 @@ export async function GET(
       );
     }
 
-    if (workflow.app.accountId !== session.accountId) {
+    if (workflow.apps.accountId !== session.accountId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }

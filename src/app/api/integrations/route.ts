@@ -9,7 +9,7 @@ import { prisma } from '@/lib/prisma';
 export async function GET(request: NextRequest) {
   try {
     // Get all integrations from database
-    const integrations = await prisma.integration.findMany({
+    const integrations = await prisma.integrations.findMany({
       where: {
         status: 'available',
       },

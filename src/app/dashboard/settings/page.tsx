@@ -13,10 +13,10 @@ export default async function SettingsPage() {
 
   // Fetch account and user details
   const [account, user] = await Promise.all([
-    prisma.account.findUnique({
+    prisma.accounts.findUnique({
       where: { id: session.accountId },
     }),
-    prisma.accountUser.findUnique({
+    prisma.account_users.findUnique({
       where: { id: session.userId },
     }),
   ]);

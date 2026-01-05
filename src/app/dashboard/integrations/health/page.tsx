@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/ui/components/card';
 import { Activity, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 
 async function getIntegrationHealth(accountId: string) {
-  const integrations = await prisma.integration.findMany({
+  const integrations = await prisma.integrations.findMany({
     where: {
       status: 'available', // Only show available integrations
     },
@@ -22,26 +22,26 @@ async function getIntegrationHealth(accountId: string) {
 
   const healthData = await Promise.all(
     integrations.map(async (integration) => {
-      const last24h = await prisma.execution.count({
+      const last24h = await prisma.executions.count({
         where: {
           integrationId: integration.id,
           createdAt: {
             gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
           },
-          app: {
+          apps: {
             accountId,
           },
         },
       });
 
-      const failures = await prisma.execution.count({
+      const failures = await prisma.executions.count({
         where: {
           integrationId: integration.id,
           status: 'failure',
           createdAt: {
             gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
           },
-          app: {
+          apps: {
             accountId,
           },
         },
@@ -65,9 +65,9 @@ async function getIntegrationHealth(accountId: string) {
 }
 
 async function getOverallStats(accountId: string) {
-  const totalExecutions = await prisma.execution.count({
+  const totalExecutions = await prisma.executions.count({
     where: {
-      app: {
+      apps: {
         accountId,
       },
       createdAt: {
@@ -76,9 +76,9 @@ async function getOverallStats(accountId: string) {
     },
   });
 
-  const successfulExecutions = await prisma.execution.count({
+  const successfulExecutions = await prisma.executions.count({
     where: {
-      app: {
+      apps: {
         accountId,
       },
       status: 'success',
@@ -88,9 +88,9 @@ async function getOverallStats(accountId: string) {
     },
   });
 
-  const failedExecutions = await prisma.execution.count({
+  const failedExecutions = await prisma.executions.count({
     where: {
-      app: {
+      apps: {
         accountId,
       },
       status: 'failure',
@@ -100,7 +100,7 @@ async function getOverallStats(accountId: string) {
     },
   });
 
-  const activeIntegrations = await prisma.integration.count({
+  const activeIntegrations = await prisma.integrations.count({
     where: {
       status: 'available',
     },

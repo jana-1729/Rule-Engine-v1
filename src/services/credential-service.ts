@@ -31,7 +31,7 @@ export async function createConnection(input: CreateConnectionInput) {
     : null;
 
   // Store in database
-  const connection = await prisma.endUserConnection.create({
+  const connection = await prisma.end_usersConnection.create({
     data: {
       appId: input.organizationId, // Assuming organizationId maps to appId
       integrationId: input.integrationId,
@@ -59,9 +59,9 @@ export async function createConnection(input: CreateConnectionInput) {
 export async function getConnection(
   connectionId: string
 ): Promise<ConnectionCredentials | null> {
-  const connection = await prisma.endUserConnection.findUnique({
+  const connection = await prisma.end_usersConnection.findUnique({
     where: { id: connectionId },
-    include: { integration: true },
+    include: { integrations: true },
   });
 
   if (!connection) {
@@ -77,7 +77,7 @@ export async function getConnection(
     }
     
     // Mark as expired
-    await prisma.endUserConnection.update({
+    await prisma.end_usersConnection.update({
       where: { id: connectionId },
       data: { status: 'expired' },
     });
@@ -97,13 +97,13 @@ export async function getConnection(
   }
 
   // Update last used timestamp
-  await prisma.endUserConnection.update({
+  await prisma.end_usersConnection.update({
     where: { id: connectionId },
     data: { lastUsedAt: new Date() },
   });
 
   return {
-    type: connection.integration.authType as any,
+    type: connection.integrations.authType as any,
     data: decryptedCredentials,
     expiresAt: connection.expiresAt || undefined,
   };
@@ -115,9 +115,9 @@ export async function getConnection(
 export async function refreshConnection(
   connectionId: string
 ): Promise<ConnectionCredentials | null> {
-  const connection = await prisma.endUserConnection.findUnique({
+  const connection = await prisma.end_usersConnection.findUnique({
     where: { id: connectionId },
-    include: { integration: true },
+    include: { integrations: true },
   });
 
   if (!connection || !connection.refreshToken) {
@@ -143,9 +143,9 @@ export async function refreshConnection(
  * Validate connection credentials
  */
 export async function validateConnection(connectionId: string): Promise<boolean> {
-  const connection = await prisma.endUserConnection.findUnique({
+  const connection = await prisma.end_usersConnection.findUnique({
     where: { id: connectionId },
-    include: { integration: true },
+    include: { integrations: true },
   });
 
   if (!connection) {
@@ -154,7 +154,7 @@ export async function validateConnection(connectionId: string): Promise<boolean>
 
   // Get integration from registry
   const { integrationRegistry } = await import('../integrations/registry');
-  const integration = integrationRegistry.get(connection.integration.slug);
+  const integration = integrationRegistry.get(connection.integrations.slug);
 
   if (!integration || !integration.auth.validate) {
     return true; // Assume valid if no validation function
@@ -175,7 +175,7 @@ export async function validateConnection(connectionId: string): Promise<boolean>
  * Revoke connection
  */
 export async function revokeConnection(connectionId: string): Promise<void> {
-  await prisma.endUserConnection.update({
+  await prisma.end_usersConnection.update({
     where: { id: connectionId },
     data: { status: 'revoked' },
   });
@@ -187,7 +187,7 @@ export async function revokeConnection(connectionId: string): Promise<void> {
  * Delete connection
  */
 export async function deleteConnection(connectionId: string): Promise<void> {
-  await prisma.endUserConnection.delete({
+  await prisma.end_usersConnection.delete({
     where: { id: connectionId },
   });
 
@@ -198,9 +198,9 @@ export async function deleteConnection(connectionId: string): Promise<void> {
  * List connections for organization
  */
 export async function listConnections(appId: string) {
-  return await prisma.endUserConnection.findMany({
+  return await prisma.end_usersConnection.findMany({
     where: { appId },
-    include: { integration: true },
+    include: { integrations: true },
     orderBy: { createdAt: 'desc' },
   });
 }
@@ -210,7 +210,7 @@ export async function listConnections(appId: string) {
  */
 export async function getConnectionStats(connectionId: string) {
   // Get usage from executions
-  const executions = await prisma.execution.findMany({
+  const executions = await prisma.executions.findMany({
     where: {
       // Note: This query needs to be updated based on actual schema
       // For now, we'll just get all executions

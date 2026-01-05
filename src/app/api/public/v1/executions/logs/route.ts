@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     };
 
     if (endUserId) {
-      const endUser = await prisma.endUser.findFirst({
+      const endUser = await prisma.end_users.findFirst({
         where: {
           appId: app.id,
           externalId: endUserId,
@@ -103,7 +103,7 @@ export async function GET(request: NextRequest) {
 
     // Get executions
     const [executions, total] = await Promise.all([
-      prisma.execution.findMany({
+      prisma.executions.findMany({
         where,
         include: {
           workflow: {
@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset,
       }),
-      prisma.execution.count({ where }),
+      prisma.executions.count({ where }),
     ]);
 
     // Format response
@@ -144,9 +144,9 @@ export async function GET(request: NextRequest) {
       workflow: exec.workflow,
       integration: exec.integration,
       endUser: {
-        id: exec.endUser.externalId,
-        email: exec.endUser.email,
-        name: exec.endUser.name,
+        id: exec.end_users.externalId,
+        email: exec.end_users.email,
+        name: exec.end_users.name,
       },
       status: exec.status,
       input: exec.input,

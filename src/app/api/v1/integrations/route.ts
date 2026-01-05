@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get integrations
-    const integrations = await prisma.integration.findMany({
+    const integrations = await prisma.integrations.findMany({
       where,
       select: {
         id: true,
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Check which integrations are enabled for this app
-    const enabledIntegrations = await prisma.appIntegration.findMany({
+    const enabledIntegrations = await prisma.app_integrations.findMany({
       where: {
         appId: app.id,
         enabled: true,
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     const enabledIds = new Set(enabledIntegrations.map(i => i.integrationId));
 
     // Add connection stats per integration
-    const connectionCounts = await prisma.endUserConnection.groupBy({
+    const connectionCounts = await prisma.end_usersConnection.groupBy({
       by: ['integrationId'],
       where: {
         appId: app.id,

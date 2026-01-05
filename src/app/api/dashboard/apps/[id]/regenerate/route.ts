@@ -17,7 +17,7 @@ export async function POST(
     }
 
     // Verify app belongs to this account
-    const app = await prisma.app.findFirst({
+    const app = await prisma.apps.findFirst({
       where: {
         id: params.id,
         accountId: session.accountId,

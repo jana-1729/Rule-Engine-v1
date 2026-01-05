@@ -14,48 +14,48 @@ export default async function DashboardPage() {
 
   // Fetch stats
   const [apps, executions, integrations, recentExecutions] = await Promise.all([
-    prisma.app.count({ where: { accountId: session.accountId } }),
-    prisma.execution.count({ 
+    prisma.apps.count({ where: { accountId: session.accountId } }),
+    prisma.executions.count({ 
       where: { 
-        app: {
+        apps: {
           accountId: session.accountId
         }
       } 
     }),
-    prisma.app.findMany({
+    prisma.apps.findMany({
       where: { accountId: session.accountId },
       include: {
         _count: {
-          select: { connections: true },
+          select: { end_user_connections: true },
         },
       },
     }),
-    prisma.execution.findMany({
+    prisma.executions.findMany({
       where: { 
-        app: {
+        apps: {
           accountId: session.accountId
         }
       },
       orderBy: { createdAt: 'desc' },
       take: 10,
       include: {
-        integration: true,
-        app: true,
-        endUser: true,
+        integrations: true,
+        apps: true,
+        end_users: true,
       },
     }),
   ]);
 
   const totalConnections = integrations.reduce(
-    (sum, app) => sum + app._count.connections,
+    (sum, app) => sum + app._count.end_user_connections,
     0
   );
 
   const successRate = executions > 0
-    ? await prisma.execution
+    ? await prisma.executions
         .count({
           where: {
-            app: {
+            apps: {
               accountId: session.accountId
             },
             status: 'success',
@@ -184,10 +184,10 @@ export default async function DashboardPage() {
                 >
                   <div className="flex items-center space-x-4 flex-1">
                     <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {execution.integration?.logo ? (
+                      {execution.integrations?.logo ? (
                         <img 
-                          src={execution.integration.logo} 
-                          alt={execution.integration.name}
+                          src={execution.integrations.logo} 
+                          alt={execution.integrations.name}
                           className="w-full h-full object-contain p-1"
                         />
                       ) : (
@@ -197,13 +197,13 @@ export default async function DashboardPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2">
                         <p className="font-medium text-gray-900 truncate">
-                          {execution.integration?.name || 'Unknown'}
+                          {execution.integrations?.name || 'Unknown'}
                         </p>
                         <span className="text-gray-400">•</span>
                         <p className="text-sm text-gray-600 truncate">{execution.action}</p>
                       </div>
                       <div className="flex items-center space-x-2 mt-1">
-                        <p className="text-xs text-gray-500">{execution.app?.name}</p>
+                        <p className="text-xs text-gray-500">{execution.apps?.name}</p>
                         <span className="text-gray-300">•</span>
                         <p className="text-xs text-gray-500">
                           {new Date(execution.createdAt).toLocaleString()}

@@ -30,7 +30,7 @@ class SchemaCacheService {
       this.cache.set(key, { schema, metadata });
       
       // Also store in database for persistence
-      await prisma.schemaCache.upsert({
+      await prisma.schema_cache.upsert({
         where: { key },
         create: {
           key,
@@ -117,7 +117,7 @@ class SchemaCacheService {
    */
   async loadFromDatabase(): Promise<void> {
     try {
-      const schemas = await prisma.schemaCache.findMany();
+      const schemas = await prisma.schema_cache.findMany();
       
       for (const schema of schemas) {
         this.cache.set(schema.key, {

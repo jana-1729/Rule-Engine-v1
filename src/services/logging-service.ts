@@ -36,7 +36,7 @@ export async function logAudit(
     userAgent?: string;
   }
 ) {
-  await prisma.auditLog.create({
+  await prisma.audit_logs.create({
     data: {
       accountId: organizationId,
       appId: organizationId, // This should be the actual appId
@@ -115,7 +115,7 @@ export async function getAuditLog(
   if (resource) where.resource = resource;
   if (resourceId) where.resourceId = resourceId;
 
-  return await prisma.auditLog.findMany({
+  return await prisma.audit_logs.findMany({
     where,
     orderBy: { createdAt: 'desc' },
     take: limit,

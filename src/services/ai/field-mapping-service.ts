@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { geminiService } from './gemini-service';
+import { geminiServiceEnhanced as geminiService } from './gemini-service-enhanced';
 import { schemaCacheService } from './schema-cache-service';
 
 export interface FieldMapping {
@@ -37,7 +37,7 @@ class FieldMappingService {
     targetSchema: z.ZodType,
     context?: string
   ): Promise<MappingSuggestion> {
-    if (!geminiService.isAvailable()) {
+    if (!geminiService.getHealth().available) {
       throw new Error('Gemini AI service not available. Please configure GOOGLE_GEMINI_API_KEY.');
     }
 
@@ -53,8 +53,8 @@ class FieldMappingService {
         context
       );
 
-      // Get AI suggestions
-      const suggestion = await geminiService.chatWithJSON([
+      // Get AI suggestions with enhanced service
+      const response = await geminiService.chatWithJSON([
         {
           role: 'system',
           content: 'You are an expert at mapping data between different API schemas. Provide accurate field mappings with confidence scores.',
@@ -63,7 +63,17 @@ class FieldMappingService {
           role: 'user',
           content: prompt,
         },
-      ]);
+      ], {
+        useCache: true,
+        cacheTTL: 3600, // Cache for 1 hour
+        temperature: 0.7 // Lower temperature for more consistent results
+      });
+
+      // Extract the actual suggestion (without _meta)
+      const { _meta, ...suggestion } = response;
+
+      // Log usage
+      console.log(`Field mapping: ${_meta.usage.totalTokens} tokens, $${_meta.usage.estimatedCost.toFixed(6)}, cached: ${_meta.cached}`);
 
       // Validate response structure
       this.validateMappingSuggestion(suggestion);

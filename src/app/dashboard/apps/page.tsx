@@ -13,12 +13,12 @@ export default async function AppsPage() {
   }
 
   // Fetch apps for this account
-  const apps = await prisma.app.findMany({
+  const apps = await prisma.apps.findMany({
     where: { accountId: session.accountId },
     include: {
       _count: {
         select: {
-          connections: true,
+          end_user_connections: true,
           executions: true,
         },
       },
@@ -62,7 +62,7 @@ export default async function AppsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-2xl font-bold text-gray-900">
-                    {app._count.connections}
+                    {app._count.end_user_connections}
                   </div>
                   <div className="text-sm text-gray-600">Connections</div>
                 </div>

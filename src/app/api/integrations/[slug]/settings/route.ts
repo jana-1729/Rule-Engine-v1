@@ -33,7 +33,7 @@ export async function GET(
     const { slug } = params;
 
     // Get integration
-    const integration = await prisma.integration.findUnique({
+    const integration = await prisma.integrations.findUnique({
       where: { slug },
     });
 
@@ -45,7 +45,7 @@ export async function GET(
     }
 
     // Get app (for now, get the first app - in production, this should come from session)
-    const app = await prisma.app.findFirst({
+    const app = await prisma.apps.findFirst({
       where: { accountId: session.userId },
     });
 
@@ -57,7 +57,7 @@ export async function GET(
     }
 
     // Get app integration settings
-    const appIntegration = await prisma.appIntegration.findUnique({
+    const appIntegration = await prisma.app_integrations.findUnique({
       where: {
         appId_integrationId: {
           appId: app.id,
@@ -128,7 +128,7 @@ export async function POST(
     const validatedData = settingsSchema.parse(body);
 
     // Get integration
-    const integration = await prisma.integration.findUnique({
+    const integration = await prisma.integrations.findUnique({
       where: { slug },
     });
 
@@ -140,7 +140,7 @@ export async function POST(
     }
 
     // Get app
-    const app = await prisma.app.findFirst({
+    const app = await prisma.apps.findFirst({
       where: { accountId: session.userId },
     });
 
@@ -175,7 +175,7 @@ export async function POST(
     }
 
     // Get existing settings to preserve secret if not provided
-    const existingSettings = await prisma.appIntegration.findUnique({
+    const existingSettings = await prisma.app_integrations.findUnique({
       where: {
         appId_integrationId: {
           appId: app.id,
@@ -185,7 +185,7 @@ export async function POST(
     });
 
     // Upsert app integration settings
-    const appIntegration = await prisma.appIntegration.upsert({
+    const appIntegration = await prisma.app_integrations.upsert({
       where: {
         appId_integrationId: {
           appId: app.id,

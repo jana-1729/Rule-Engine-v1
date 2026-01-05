@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get connection
-    const connection = await prisma.endUserConnection.findUnique({
+    const connection = await prisma.end_usersConnection.findUnique({
       where: { id: connectionId },
       include: {
         integration: true,
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update connection status to revoked
-    await prisma.endUserConnection.update({
+    await prisma.end_usersConnection.update({
       where: { id: connectionId },
       data: {
         status: 'revoked',
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: {
         connectionId,
-        integration: connection.integration.slug,
+        integration: connection.integrations.slug,
         status: 'disconnected',
       },
     });

@@ -49,7 +49,7 @@ export class ConnectionManager {
    */
   async hasConnection(endUserIdOrExternalId: string, integrationSlug: string, appId?: string): Promise<boolean> {
     try {
-      const integration = await prisma.integration.findUnique({
+      const integration = await prisma.integrations.findUnique({
         where: { slug: integrationSlug },
       });
       
@@ -73,7 +73,7 @@ export class ConnectionManager {
       }
       
       // Try to find connection by database ID first
-      let connection = await prisma.endUserConnection.findFirst({
+      let connection = await prisma.end_usersConnection.findFirst({
         where: whereClause,
         orderBy: {
           createdAt: 'desc', // Get the most recent connection
@@ -118,7 +118,7 @@ export class ConnectionManager {
     appId?: string
   ): Promise<(ConnectionStatus & { credentials: ConnectionCredentials }) | null> {
     try {
-      const integration = await prisma.integration.findUnique({
+      const integration = await prisma.integrations.findUnique({
         where: { slug: integrationSlug },
       });
       
@@ -141,7 +141,7 @@ export class ConnectionManager {
       }
       
       // Try to find connection by database ID or external ID
-      const connection = await prisma.endUserConnection.findFirst({
+      const connection = await prisma.end_usersConnection.findFirst({
         where: whereClause,
         include: {
           integration: {
@@ -177,7 +177,7 @@ export class ConnectionManager {
           } catch (refreshError) {
             console.error('[ConnectionManager] Failed to refresh token:', refreshError);
             // Mark as expired
-            await prisma.endUserConnection.update({
+            await prisma.end_usersConnection.update({
               where: { id: connection.id },
               data: { status: 'expired' },
             });
@@ -185,7 +185,7 @@ export class ConnectionManager {
           }
         } else {
           // No refresh token, mark as expired
-          await prisma.endUserConnection.update({
+          await prisma.end_usersConnection.update({
             where: { id: connection.id },
             data: { status: 'expired' },
           });
@@ -230,7 +230,7 @@ export class ConnectionManager {
     redirectUri?: string
   ): Promise<OAuthInitiateResult> {
     try {
-      const integration = await prisma.integration.findUnique({
+      const integration = await prisma.integrations.findUnique({
         where: { slug: integrationSlug },
       });
       
@@ -250,7 +250,7 @@ export class ConnectionManager {
       
       // Ensure EndUser exists (create if not)
       // endUserId is the externalId from the app's system
-      const endUser = await prisma.endUser.upsert({
+      const endUser = await prisma.end_users.upsert({
         where: {
           appId_externalId: {
             appId,
@@ -273,7 +273,7 @@ export class ConnectionManager {
       const state = crypto.randomBytes(32).toString('base64url');
       
       // Store OAuth state with the actual endUser.id (database ID, not externalId)
-      await prisma.oAuthState.create({
+      await prisma.oauth_states.create({
         data: {
           state,
           appId,
@@ -285,7 +285,7 @@ export class ConnectionManager {
       });
       
       // Check if app has custom credentials configured
-      const appIntegration = await prisma.appIntegration.findUnique({
+      const appIntegration = await prisma.app_integrations.findUnique({
         where: {
           appId_integrationId: {
             appId,
@@ -346,7 +346,7 @@ export class ConnectionManager {
   async handleOAuthCallback(code: string, state: string) {
     try {
       // Find and validate OAuth state
-      const oauthState = await prisma.oAuthState.findUnique({
+      const oauthState = await prisma.oauth_states.findUnique({
         where: { state },
         include: {
           integration: true,
@@ -359,7 +359,7 @@ export class ConnectionManager {
       }
       
       if (oauthState.expiresAt < new Date()) {
-        await prisma.oAuthState.delete({ where: { state } });
+        await prisma.oauth_states.delete({ where: { state } });
         throw new Error('OAuth state expired');
       }
       
@@ -371,7 +371,7 @@ export class ConnectionManager {
       const authConfig = integration.authConfig as any;
       
       // Check if app has custom credentials configured
-      const appIntegration = await prisma.appIntegration.findUnique({
+      const appIntegration = await prisma.app_integrations.findUnique({
         where: {
           appId_integrationId: {
             appId: oauthState.appId,
@@ -448,7 +448,7 @@ export class ConnectionManager {
         : null;
       
       // Store or update connection
-      const connection = await prisma.endUserConnection.upsert({
+      const connection = await prisma.end_usersConnection.upsert({
         where: {
           endUserId_integrationId: {
             endUserId: oauthState.endUserId,
@@ -485,13 +485,13 @@ export class ConnectionManager {
       });
       
       // Mark OAuth state as used
-      await prisma.oAuthState.update({
+      await prisma.oauth_states.update({
         where: { state },
         data: { usedAt: new Date() },
       });
       
       // Clean up old OAuth states (older than 1 hour)
-      await prisma.oAuthState.deleteMany({
+      await prisma.oauth_states.deleteMany({
         where: {
           expiresAt: {
             lt: new Date(Date.now() - 60 * 60 * 1000),
@@ -513,7 +513,7 @@ export class ConnectionManager {
    */
   async refreshConnection(connectionId: string) {
     try {
-      const connection = await prisma.endUserConnection.findUnique({
+      const connection = await prisma.end_usersConnection.findUnique({
         where: { id: connectionId },
         include: {
           integration: true,
@@ -532,7 +532,7 @@ export class ConnectionManager {
       const authConfig = integration.authConfig as any;
       
       // Mark as refreshing
-      await prisma.endUserConnection.update({
+      await prisma.end_usersConnection.update({
         where: { id: connectionId },
         data: { status: 'refreshing' },
       });
@@ -567,7 +567,7 @@ export class ConnectionManager {
         console.error('[ConnectionManager] Token refresh failed:', errorText);
         
         // Mark as error
-        await prisma.endUserConnection.update({
+        await prisma.end_usersConnection.update({
           where: { id: connectionId },
           data: { 
             status: 'error',
@@ -597,7 +597,7 @@ export class ConnectionManager {
         : null;
       
       // Update connection
-      const updatedConnection = await prisma.endUserConnection.update({
+      const updatedConnection = await prisma.end_usersConnection.update({
         where: { id: connectionId },
         data: {
           accessToken: encryptedAccessToken,
@@ -613,7 +613,7 @@ export class ConnectionManager {
       });
       
       // Fetch the updated connection with integration details
-      const updatedConnectionWithIntegration = await prisma.endUserConnection.findUnique({
+      const updatedConnectionWithIntegration = await prisma.end_usersConnection.findUnique({
         where: { id: connectionId },
         include: {
           integration: {
@@ -665,7 +665,7 @@ export class ConnectionManager {
    */
   async disconnect(endUserId: string, integrationSlug: string): Promise<void> {
     try {
-      const integration = await prisma.integration.findUnique({
+      const integration = await prisma.integrations.findUnique({
         where: { slug: integrationSlug },
       });
       
@@ -673,7 +673,7 @@ export class ConnectionManager {
         throw new Error(`Integration not found: ${integrationSlug}`);
       }
       
-      await prisma.endUserConnection.delete({
+      await prisma.end_usersConnection.delete({
         where: {
           endUserId_integrationId: {
             endUserId,
@@ -694,7 +694,7 @@ export class ConnectionManager {
    */
   async getUserConnections(endUserId: string): Promise<ConnectionStatus[]> {
     try {
-      const connections = await prisma.endUserConnection.findMany({
+      const connections = await prisma.end_usersConnection.findMany({
         where: { endUserId },
         include: {
           integration: {
@@ -732,7 +732,7 @@ export class ConnectionManager {
     error: { code: string; message: string; recoverable?: boolean }
   ): Promise<void> {
     try {
-      const connection = await prisma.endUserConnection.findUnique({
+      const connection = await prisma.end_usersConnection.findUnique({
         where: { id: connectionId },
       });
       
@@ -741,7 +741,7 @@ export class ConnectionManager {
       const consecutiveErrors = connection.consecutiveErrors + 1;
       const shouldMarkAsError = consecutiveErrors >= 3; // After 3 consecutive errors
       
-      await prisma.endUserConnection.update({
+      await prisma.end_usersConnection.update({
         where: { id: connectionId },
         data: {
           status: shouldMarkAsError ? 'error' : connection.status,
@@ -766,7 +766,7 @@ export class ConnectionManager {
    */
   async markConnectionUsed(connectionId: string): Promise<void> {
     try {
-      await prisma.endUserConnection.update({
+      await prisma.end_usersConnection.update({
         where: { id: connectionId },
         data: { 
           lastUsedAt: new Date(),

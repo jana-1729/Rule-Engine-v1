@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
     const validated = createWorkflowSchema.parse(body);
 
     // Get integration
-    const integration = await prisma.integration.findUnique({
+    const integration = await prisma.integrations.findUnique({
       where: { slug: validated.integrationSlug },
     });
 
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create workflow
-    const workflow = await prisma.workflow.create({
+    const workflow = await prisma.workflows.create({
       data: {
         appId: app.id,
         name: validated.name,

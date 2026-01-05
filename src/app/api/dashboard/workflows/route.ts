@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ Validated data:', JSON.stringify(data, null, 2));
 
     // Verify app belongs to this account
-    const app = await prisma.app.findFirst({
+    const app = await prisma.apps.findFirst({
       where: {
         id: data.appId,
         accountId: session.accountId,
@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
 
     // Verify integration exists
     console.log('🔍 Looking for integration with ID:', data.integrationId);
-    const integration = await prisma.integration.findUnique({
+    const integration = await prisma.integrations.findUnique({
       where: { id: data.integrationId },
     });
 
     if (!integration) {
       console.error('❌ Integration not found with ID:', data.integrationId);
       console.log('🔍 Checking all integrations...');
-      const allIntegrations = await prisma.integration.findMany({
+      const allIntegrations = await prisma.integrations.findMany({
         select: { id: true, slug: true, name: true },
       });
       console.log('Available integrations:', JSON.stringify(allIntegrations, null, 2));
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
     console.log('✅ Integration found:', integration.slug);
 
     // Create workflow
-    const workflow = await prisma.workflow.create({
+    const workflow = await prisma.workflows.create({
       data: {
         appId: data.appId,
         integrationId: data.integrationId,
@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const workflows = await prisma.workflow.findMany({
+    const workflows = await prisma.workflows.findMany({
       where: {
         app: {
           accountId: session.accountId,

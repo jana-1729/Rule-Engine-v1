@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get integration
-    const integration = await prisma.integration.findUnique({
+    const integration = await prisma.integrations.findUnique({
       where: { slug: integrationSlug },
     });
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if integration is enabled for this app
-    const appIntegration = await prisma.appIntegration.findUnique({
+    const appIntegration = await prisma.app_integrations.findUnique({
       where: {
         appId_integrationId: {
           appId: app.id,
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or get end user
-    let endUser = await prisma.endUser.findUnique({
+    let endUser = await prisma.end_users.findUnique({
       where: {
         appId_externalId: {
           appId: app.id,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!endUser) {
-      endUser = await prisma.endUser.create({
+      endUser = await prisma.end_users.create({
         data: {
           appId: app.id,
           externalId: endUserId,
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     const state = `state_${nanoid(32)}`;
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    await prisma.oAuthState.create({
+    await prisma.oauth_states.create({
       data: {
         state,
         appId: app.id,

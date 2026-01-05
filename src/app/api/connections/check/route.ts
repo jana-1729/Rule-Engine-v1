@@ -91,9 +91,9 @@ export async function POST(request: NextRequest) {
             lastErrorAt: conn.lastErrorAt,
             errorCount: conn.errorCount,
             integration: {
-              slug: conn.integration.slug,
-              name: conn.integration.name,
-              logo: conn.integration.logo,
+              slug: conn.integrations.slug,
+              name: conn.integrations.name,
+              logo: conn.integrations.logo,
             },
           };
         }

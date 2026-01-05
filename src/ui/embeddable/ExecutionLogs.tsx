@@ -190,10 +190,10 @@ export function ExecutionLogs({
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4 flex-1">
-                  {execution.integration.logo && (
+                  {execution.integrations.logo && (
                     <img
-                      src={execution.integration.logo}
-                      alt={execution.integration.name}
+                      src={execution.integrations.logo}
+                      alt={execution.integrations.name}
                       className="w-10 h-10 rounded-lg"
                     />
                   )}
@@ -201,7 +201,7 @@ export function ExecutionLogs({
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <h3 className="font-semibold">
-                        {execution.workflow.name}
+                        {execution.workflows.name}
                       </h3>
                       <Badge className={getStatusColor(execution.status)}>
                         {execution.status}
@@ -209,7 +209,7 @@ export function ExecutionLogs({
                     </div>
 
                     <div className="flex items-center gap-4 text-sm text-gray-600">
-                      <span>{execution.integration.name}</span>
+                      <span>{execution.integrations.name}</span>
                       <span>•</span>
                       <span>{formatDate(execution.createdAt)}</span>
                       <span>•</span>

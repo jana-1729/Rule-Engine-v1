@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const { accountName, email, password } = signupSchema.parse(body);
 
     // Check if email already exists
-    const existing = await prisma.accountUser.findFirst({
+    const existing = await prisma.account_users.findFirst({
       where: { email },
     });
 
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Create account, user, and default app in transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create account
-      const account = await tx.account.create({
+      const account = await tx.accounts.create({
         data: {
           email,
           name: accountName,
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       const apiKey = generateApiKey(appId);
       const apiKeyHash = hashApiKey(apiKey);
 
-      const app = await tx.app.create({
+      const app = await tx.apps.create({
         data: {
           accountId: account.id,
           appId,
@@ -102,8 +102,8 @@ export async function POST(request: NextRequest) {
           name: result.account.name,
         },
         app: {
-          id: result.app.id,
-          appId: result.app.appId,
+          id: result.apps.id,
+          appId: result.apps.appId,
           apiKey: result.apiKey, // Show once on signup
         },
       },

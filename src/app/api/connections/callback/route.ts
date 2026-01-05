@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     
     if (state) {
       try {
-        const oauthState = await prisma.oAuthState.findUnique({
+        const oauthState = await prisma.oauth_states.findUnique({
           where: { state },
         });
         
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       const { searchParams } = new URL(request.url);
       const state = searchParams.get('state');
       if (state) {
-        const oauthState = await prisma.oAuthState.findUnique({
+        const oauthState = await prisma.oauth_states.findUnique({
           where: { state },
         });
         if (oauthState?.redirectUri) {

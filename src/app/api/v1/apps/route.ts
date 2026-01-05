@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if account exists
-    const existingAccount = await prisma.account.findUnique({
+    const existingAccount = await prisma.accounts.findUnique({
       where: { email: accountEmail },
     });
 
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     // Create account and app in transaction
     const result = await prisma.$transaction(async (tx) => {
       // Create account
-      const account = await tx.account.create({
+      const account = await tx.accounts.create({
         data: {
           email: accountEmail,
           name: accountName,
@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
       const apiKeyHash = hashApiKey(apiKey);
       const webhookSecret = `whsec_${nanoid(32)}`;
 
-      const app = await tx.app.create({
+      const app = await tx.apps.create({
         data: {
           accountId: account.id,
           appId,
@@ -125,13 +125,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Log audit event
-    await prisma.auditLog.create({
+    await prisma.audit_logs.create({
       data: {
         accountId: result.account.id,
         appId: result.app.id,
         action: 'app.created',
         resource: 'app',
-        resourceId: result.app.id,
+        resourceId: result.apps.id,
       },
     });
 
@@ -144,11 +144,11 @@ export async function POST(request: NextRequest) {
           name: result.account.name,
         },
         app: {
-          id: result.app.id,
-          appId: result.app.appId,
+          id: result.apps.id,
+          appId: result.apps.appId,
           apiKey: result.apiKey, // Only returned on creation!
           webhookSecret: result.webhookSecret,
-          name: result.app.name,
+          name: result.apps.name,
         },
         message: 'Account and app created successfully. Save your API key - it will not be shown again!',
       },

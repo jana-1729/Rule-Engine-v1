@@ -18,7 +18,7 @@ export async function PUT(request: NextRequest) {
     const { currentPassword, newPassword } = passwordSchema.parse(body);
 
     // Get user with password hash
-    const user = await prisma.accountUser.findUnique({
+    const user = await prisma.account_users.findUnique({
       where: { id: session.userId },
     });
 
@@ -43,13 +43,13 @@ export async function PUT(request: NextRequest) {
     const newPasswordHash = await bcrypt.hash(newPassword, 10);
 
     // Update password
-    await prisma.accountUser.update({
+    await prisma.account_users.update({
       where: { id: session.userId },
       data: { passwordHash: newPasswordHash },
     });
 
     // Also update account password hash
-    await prisma.account.update({
+    await prisma.accounts.update({
       where: { id: session.accountId },
       data: { passwordHash: newPasswordHash },
     });

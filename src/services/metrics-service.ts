@@ -39,22 +39,22 @@ export async function getDashboardMetrics(
     allExecutions,
   ] = await Promise.all([
     // Total workflows
-    prisma.workflow.count({
+    prisma.workflows.count({
       where: { appId },
     }),
 
     // Active workflows
-    prisma.workflow.count({
+    prisma.workflows.count({
       where: { appId, enabled: true },
     }),
 
     // Total executions
-    prisma.execution.count({
+    prisma.executions.count({
       where: { appId },
     }),
 
     // Executions today
-    prisma.execution.count({
+    prisma.executions.count({
       where: {
         appId,
         createdAt: { gte: today },
@@ -62,7 +62,7 @@ export async function getDashboardMetrics(
     }),
 
     // Recent executions
-    prisma.execution.findMany({
+    prisma.executions.findMany({
       where: { appId },
       include: {
         workflow: {
@@ -74,7 +74,7 @@ export async function getDashboardMetrics(
     }),
 
     // All executions for calculations
-    prisma.execution.findMany({
+    prisma.executions.findMany({
       where: { appId },
       select: {
         status: true,
@@ -110,7 +110,7 @@ export async function getDashboardMetrics(
   const integrationCounts = new Map<string, number>();
   allExecutions.forEach(exec => {
     if (!exec.workflow) return;
-    const definition = exec.workflow.definition as any;
+    const definition = exec.workflows.definition as any;
     if (definition?.steps) {
       definition.steps.forEach((step: any) => {
         const count = integrationCounts.get(step.integration) || 0;
@@ -134,7 +134,7 @@ export async function getDashboardMetrics(
       workflowFailures.set(workflowId, count + 1);
     });
 
-  const failingWorkflows = await prisma.workflow.findMany({
+  const failingWorkflows = await prisma.workflows.findMany({
     where: {
       appId,
       id: {
@@ -166,7 +166,7 @@ export async function getDashboardMetrics(
  */
 export async function getWorkflowMetrics(workflowId: string) {
   const [executions, lastExecution] = await Promise.all([
-    prisma.execution.findMany({
+    prisma.executions.findMany({
       where: { workflowId },
       select: {
         status: true,
@@ -174,7 +174,7 @@ export async function getWorkflowMetrics(workflowId: string) {
         completedAt: true,
       },
     }),
-    prisma.execution.findFirst({
+    prisma.executions.findFirst({
       where: { workflowId },
       orderBy: { createdAt: 'desc' },
     }),
@@ -236,7 +236,7 @@ export async function recordUsageMetric(
   const periodEnd = new Date(periodStart);
   periodEnd.setHours(periodEnd.getHours() + 1);
 
-  await prisma.usageMetric.create({
+  await prisma.usage_metrics.create({
     data: {
       accountId: appId, // This should be the actual accountId
       appId,

@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const { workflowId, endUserId, data } = executeWorkflowSchema.parse(body);
 
     // Fetch workflow with all necessary relations
-    const workflow = await prisma.workflow.findFirst({
+    const workflow = await prisma.workflows.findFirst({
       where: {
         id: workflowId,
         appId: validation.appId,
@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify end user belongs to this app
-    const endUser = await prisma.endUser.findFirst({
+    const endUser = await prisma.end_users.findFirst({
       where: {
         id: endUserId,
         appId: validation.appId,
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get end user's connection for this integration
-    const connection = await prisma.endUserConnection.findFirst({
+    const connection = await prisma.end_usersConnection.findFirst({
       where: {
         endUserId,
         integrationId: workflow.integrationId,
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
           error: 'No active connection found for this integration',
           details: {
             integrationId: workflow.integrationId,
-            integrationName: workflow.integration.name,
+            integrationName: workflow.integrations.name,
             message: 'End user needs to connect their account first',
           },
         },
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create execution record
-    const execution = await prisma.execution.create({
+    const execution = await prisma.executions.create({
       data: {
         appId: validation.appId!,
         endUserId,
@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
 
       // Update execution with result
       const completedAt = new Date();
-      await prisma.execution.update({
+      await prisma.executions.update({
         where: { id: execution.id },
         data: {
           status: result.success ? 'success' : 'failed',
@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error: any) {
       // Update execution with error
-      await prisma.execution.update({
+      await prisma.executions.update({
         where: { id: execution.id },
         data: {
           status: 'failed',
@@ -248,9 +248,9 @@ async function executeWorkflow(
     });
 
     // Get the integration and action
-    const integration = integrationRegistry.get(workflow.integration.slug);
+    const integration = integrationRegistry.get(workflow.integrations.slug);
     if (!integration) {
-      throw new Error(`Integration ${workflow.integration.slug} not found in registry`);
+      throw new Error(`Integration ${workflow.integrations.slug} not found in registry`);
     }
 
     const action = integration.actions[definition.action];

@@ -26,7 +26,7 @@ export default async function ExecutionsPage({
 
   // Build filters
   const where: any = {
-    app: {
+    apps: {
       accountId: session.accountId,
     },
   };
@@ -66,37 +66,37 @@ export default async function ExecutionsPage({
 
   // Fetch executions
   const [executions, integrations, apps] = await Promise.all([
-    prisma.execution.findMany({
+    prisma.executions.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: 100,
       include: {
-        integration: true,
-        app: true,
-        endUser: true,
+        integrations: true,
+        apps: true,
+        end_users: true,
       },
     }),
-    prisma.integration.findMany({
+    prisma.integrations.findMany({
       where: { status: 'available' },
       select: { id: true, name: true, slug: true },
     }),
-    prisma.app.findMany({
+    prisma.apps.findMany({
       where: { accountId: session.accountId },
       select: { id: true, name: true, appId: true },
     }),
   ]);
 
   // Calculate stats
-  const accountWhere = { app: { accountId: session.accountId } };
+  const accountWhere = { apps: { accountId: session.accountId } };
   const stats = {
-    total: await prisma.execution.count({ where: accountWhere }),
-    success: await prisma.execution.count({
+    total: await prisma.executions.count({ where: accountWhere }),
+    success: await prisma.executions.count({
       where: { ...accountWhere, status: 'success' },
     }),
-    failure: await prisma.execution.count({
+    failure: await prisma.executions.count({
       where: { ...accountWhere, status: 'failure' },
     }),
-    pending: await prisma.execution.count({
+    pending: await prisma.executions.count({
       where: { ...accountWhere, status: 'pending' },
     }),
   };
@@ -198,8 +198,8 @@ export default async function ExecutionsPage({
                         <div className="w-10 h-10 bg-white border border-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
                           {execution.integration?.logo ? (
                             <img 
-                              src={execution.integration.logo} 
-                              alt={execution.integration.name}
+                              src={execution.integrations.logo} 
+                              alt={execution.integrations.name}
                               className="w-full h-full object-contain p-1"
                             />
                           ) : (

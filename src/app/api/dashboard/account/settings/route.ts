@@ -19,11 +19,11 @@ export async function PUT(request: NextRequest) {
 
     // Update account and user in transaction
     await prisma.$transaction([
-      prisma.account.update({
+      prisma.accounts.update({
         where: { id: session.accountId },
         data: { name: accountName },
       }),
-      prisma.accountUser.update({
+      prisma.account_users.update({
         where: { id: session.userId },
         data: {
           name: userName,

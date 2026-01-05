@@ -21,7 +21,7 @@ export async function GET(
     const { slug } = params;
 
     // Verify integration exists in database
-    const integration = await prisma.integration.findUnique({
+    const integration = await prisma.integrations.findUnique({
       where: { slug },
       select: {
         id: true,

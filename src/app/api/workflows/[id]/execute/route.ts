@@ -33,7 +33,7 @@ export async function POST(
     const { endUserId, input } = executeSchema.parse(body);
 
     // Get app ID (for now, use first app)
-    const app = await prisma.app.findFirst({
+    const app = await prisma.apps.findFirst({
       where: { accountId: session.userId },
     });
 

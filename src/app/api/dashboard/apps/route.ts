@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const session = await requireAuth();
 
     // Fetch all apps for this account
-    const apps = await prisma.app.findMany({
+    const apps = await prisma.apps.findMany({
       where: {
         accountId: session.accountId,
       },
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const { name, description } = createAppSchema.parse(body);
 
     // Verify account exists
-    const account = await prisma.account.findUnique({
+    const account = await prisma.accounts.findUnique({
       where: { id: session.accountId },
     });
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
     const apiKeyHash = hashApiKey(apiKey);
 
     // Create app
-    const app = await prisma.app.create({
+    const app = await prisma.apps.create({
       data: {
         accountId: session.accountId,
         appId,

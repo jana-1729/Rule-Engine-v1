@@ -15,7 +15,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const app = await prisma.app.findFirst({
+    const app = await prisma.apps.findFirst({
       where: {
         id: params.id,
         accountId: session.accountId,
@@ -23,9 +23,9 @@ export async function GET(
       include: {
         _count: {
           select: {
-            connections: true,
+            end_user_connections: true,
             executions: true,
-            endUsers: true,
+            end_users: true,
           },
         },
       },
@@ -68,7 +68,7 @@ export async function PATCH(
     const { name, description, status } = body;
 
     // Verify app belongs to this account
-    const existingApp = await prisma.app.findFirst({
+    const existingApp = await prisma.apps.findFirst({
       where: {
         id: params.id,
         accountId: session.accountId,
@@ -80,7 +80,7 @@ export async function PATCH(
     }
 
     // Update app
-    const app = await prisma.app.update({
+    const app = await prisma.apps.update({
       where: { id: params.id },
       data: {
         ...(name && { name }),
@@ -91,9 +91,9 @@ export async function PATCH(
       include: {
         _count: {
           select: {
-            connections: true,
+            end_user_connections: true,
             executions: true,
-            endUsers: true,
+            end_users: true,
           },
         },
       },
@@ -121,7 +121,7 @@ export async function DELETE(
     }
 
     // Verify app belongs to this account
-    const existingApp = await prisma.app.findFirst({
+    const existingApp = await prisma.apps.findFirst({
       where: {
         id: params.id,
         accountId: session.accountId,
@@ -133,7 +133,7 @@ export async function DELETE(
     }
 
     // Delete app (cascade will delete related records)
-    await prisma.app.delete({
+    await prisma.apps.delete({
       where: { id: params.id },
     });
 
